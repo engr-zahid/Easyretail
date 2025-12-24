@@ -1,51 +1,69 @@
-// src/layouts/AdminLayout.jsx
-import React, { useState } from 'react';
-import { Outlet } from 'react-router-dom';
-import Sidebar from '../components/common/Sidebar';
-import Navbar from '../components/common/Navbar';
+// import React, { useState } from "react";
+// import { Outlet } from "react-router-dom";
+// import Sidebar from "../components/common/Sidebar";
+// import Navbar from "../components/common/Navbar";
+
+// const AdminLayout = () => {
+//   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+//   return (
+//     <div className="min-h-screen bg-gray-50">
+//       {/* Desktop Sidebar */}
+//       <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-72">
+//         <Sidebar />
+//       </div>
+
+//       {/* Mobile Sidebar */}
+//       <div className="lg:hidden">
+//         <Sidebar
+//           isMobileOpen={sidebarOpen}
+//           onClose={() => setSidebarOpen(false)}
+//         />
+//       </div>
+
+//       {/* Main content */}
+//       <div className="lg:pl-72">
+//         <Navbar onMenuClick={() => setSidebarOpen(true)} />
+//         <main className="p-6">
+//           <Outlet />
+//         </main>
+//       </div>
+//     </div>
+//   );
+// };
+
+// export default AdminLayout;
+
+
+import React, { useState } from "react";
+import { Outlet } from "react-router-dom";
+import Sidebar from "../components/common/Sidebar";
+import Navbar from "../components/common/Navbar";
 
 const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-
-  const handleMobileMenuToggle = () => {
-    setSidebarOpen(!sidebarOpen);
-  };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Layout Container */}
-      <div className="relative">
-        {/* Sidebar - Desktop */}
-        <div className="hidden lg:block">
-          <Sidebar 
-            collapsed={sidebarCollapsed}
-            onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
-          />
-        </div>
+    <div className="min-h-screen bg-gray-50">
+      {/* Desktop Sidebar */}
+      <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-72">
+        <Sidebar />
+      </div>
 
-        {/* Sidebar - Mobile */}
-        <div className="lg:hidden">
-          <Sidebar 
-            isMobileOpen={sidebarOpen} 
-            onClose={() => setSidebarOpen(false)}
-            collapsed={false}
-          />
-        </div>
+      {/* Mobile Sidebar */}
+      <div className="lg:hidden">
+        <Sidebar
+          isMobileOpen={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+        />
+      </div>
 
-        {/* Main Content Area */}
-        <div className={`
-          lg:pl-0 transition-all duration-300
-          ${sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'}
-        `}>
-          <Navbar 
-            onMenuClick={handleMobileMenuToggle}
-            sidebarCollapsed={sidebarCollapsed}
-          />
-          <main className="py-6 px-4 sm:px-6 lg:px-8 mt-16 lg:mt-0">
-            <Outlet />
-          </main>
-        </div>
+      {/* Main content */}
+      <div className="lg:pl-72">
+        <Navbar onMenuClick={() => setSidebarOpen(true)} />
+        <main className="p-6">
+          <Outlet />
+        </main>
       </div>
     </div>
   );

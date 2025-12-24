@@ -1,134 +1,138 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
-import Input from '../../components/ui/Input';
-import Button from '../../components/ui/Button';
+import { useState } from "react";
+import { useAuth } from "../../context/AuthContext";
+import { useNavigate } from "react-router-dom";
+import AnimatedText from "../../components/AnimatedText";
 
 const Login = () => {
- const navigate = useNavigate();
- const [showPassword, setShowPassword] = useState(false);
- const [formData, setFormData] = useState({
- email: '',
- password: '',
- });
- const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
- const handleSubmit = async (e) => {
- e.preventDefault();
- setLoading(true);
- 
- // Simulate API call
- setTimeout(() => {
- setLoading(false);
- navigate('/');
- }, 1500);
- };
+  const { login } = useAuth();
+  const navigate = useNavigate();
 
- const handleChange = (e) => {
- setFormData({
- ...formData,
- [e.target.name]: e.target.value,
- });
- };
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
 
- return (
- <div>
- <div className="text-center mb-8">
- <h2 className="text-2xl font-bold text-gray-900">Sign in to your account</h2>
- <p className="mt-2 text-sm text-gray-600">
- Or{' '}
- <Link to="/register" className="font-medium text-primary-600 hover:text-primary-500">
- create a new account
- </Link>
- </p>
- </div>
+    try {
+      const ok = login(email, password);
+      
+      if (ok) {
+        navigate("/", { replace: true });
+      } else {
+        setError("Invalid email or password. Please sign up first.");
+      }
+    } catch (err) {
+      setError("An error occurred. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
- <form onSubmit={handleSubmit} className="space-y-6">
- <Input
- label="Email address"
- name="email"
- type="email"
- autoComplete="email"
- required
- leftIcon={<Mail className="h-5 w-5 text-gray-400" />}
- value={formData.email}
- onChange={handleChange}
- placeholder="you@example.com"
- />
- 
- <Input
- label="Password"
- name="password"
- type={showPassword ? 'text' : 'password'}
- autoComplete="current-password"
- required
- leftIcon={<Lock className="h-5 w-5 text-gray-400" />}
- rightIcon={
- <button
- type="button"
- onClick={() => setShowPassword(!showPassword)}
- className="text-gray-400 hover:text-gray-500"
- >
- {showPassword ? (
- <EyeOff className="h-5 w-5" />
- ) : (
- <Eye className="h-5 w-5" />
- )}
- </button>
- }
- value={formData.password}
- onChange={handleChange}
- placeholder="••••••••"
- />
- 
- <div className="flex items-center justify-between">
- <div className="flex items-center">
- <input
- id="remember-me"
- name="remember-me"
- type="checkbox"
- className="h-4 w-4 text-primary-600 -300 rounded focus:ring-primary-500"
- />
- <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
- Remember me
- </label>
- </div>
- 
- <Link to="/forgot-password" className="text-sm text-primary-600 hover:text-primary-500">
- Forgot password?
- </Link>
- </div>
- 
- <Button
- type="submit"
- loading={loading}
- className="w-full"
- >
- Sign in
- </Button>
- </form>
- 
- <div className="mt-6">
- <div className="relative">
- <div className="absolute inset-0 flex items-center">
- <div className="w-full -300" />
- </div>
- <div className="relative flex justify-center text-sm">
- <span className="px-2 bg-white text-gray-500">Or continue with</span>
- </div>
- </div>
- 
- <div className="mt-6 grid grid-cols-2 gap-3">
- <Button variant="secondary" className="w-full">
- Google
- </Button>
- <Button variant="secondary" className="w-full">
- GitHub
- </Button>
- </div>
- </div>
- </div>
- );
+  // Create test account
+  const createTestAccount = () => {
+    const testUser = {
+      firstName: "Test",
+      lastName: "User",
+      email: "test@example.com",
+      id: Date.now()
+    };
+    
+    localStorage.setItem("user", JSON.stringify(testUser));
+    localStorage.setItem("password", "password123");
+    
+    setEmail("test@example.com");
+    setPassword("password123");
+    
+    alert("Test account created!\nEmail: test@example.com\nPassword: password123");
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col lg:flex-row bg-gradient-to-br from-[#fef3c7] to-[#fbbf24]">
+      {/* LEFT ANIMATED TEXT */}
+      <div className="lg:w-1/2 flex items-center justify-center p-8 md:p-12 lg:p-16">
+        <div className="max-w-md space-y-6 animate-fadeLeft">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-gray-900">
+            Easy Retail
+          </h1>
+          <div className="text-lg md:text-xl text-gray-800">
+            <AnimatedText
+              text="A powerful digital retail management system designed to simplify inventory tracking, sales monitoring, customer handling, and business growth."
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* RIGHT FORM */}
+      <div className="lg:w-1/2 flex items-center justify-center p-8 md:p-12 lg:p-16">
+        <form
+          onSubmit={handleLogin}
+          className="w-full max-w-sm p-6 md:p-8 rounded-2xl bg-white shadow-2xl animate-fadeRight"
+        >
+          <h2 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8 text-center text-gray-900">
+            Login to Dashboard
+          </h2>
+
+          {error && (
+            <div className="mb-4 md:mb-6 p-3 md:p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
+
+          <input
+            type="email"
+            placeholder="Email"
+            className="w-full mb-4 p-3 md:p-4 rounded-lg border border-gray-300 outline-none focus:ring-2 focus:ring-[#fbbf24] focus:border-transparent transition-all"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+
+          <input
+            type="password"
+            placeholder="Password"
+            className="w-full mb-6 p-3 md:p-4 rounded-lg border border-gray-300 outline-none focus:ring-2 focus:ring-[#fbbf24] focus:border-transparent transition-all"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+
+          <button 
+            type="submit"
+            disabled={loading}
+            className={`w-full py-3 md:py-4 rounded-lg bg-gradient-to-r from-[#fbbf24] to-[#f59e0b] text-white font-semibold hover:scale-105 transition-all duration-300 ${
+              loading ? 'opacity-70 cursor-not-allowed' : ''
+            }`}
+          >
+            {loading ? 'Logging in...' : 'Login'}
+          </button>
+
+          <p className="text-center text-sm md:text-base text-gray-600 mt-4 md:mt-6">
+            No account?{" "}
+            <span
+              className="cursor-pointer text-[#fbbf24] hover:underline"
+              onClick={() => navigate("/signup")}
+            >
+              Create one
+            </span>
+          </p>
+
+          <div className="mt-4 md:mt-6 pt-4 md:pt-6 border-t border-gray-200">
+            <button 
+              type="button"
+              onClick={createTestAccount}
+              className="w-full py-2 md:py-3 text-sm md:text-base bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              Quick Test: Create Test Account
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
 };
 
 export default Login;

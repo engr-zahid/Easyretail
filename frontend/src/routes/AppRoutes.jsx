@@ -1,35 +1,208 @@
-import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import AdminLayout from '../layouts/AdminLayout';
-import AuthLayout from '../layouts/AuthLayout';
-import Login from '../pages/auth/Login';
-import Dashboard from '../pages/dashbaord/Dashboard'
-import ProductList from '../pages/products/ProductList';
-import OrderList from '../pages/orders/OrderList';
-import Settings from '../pages/settings/Settings'; // ✅ Imported here
+// import React from "react";
+// import { Routes, Route, Navigate } from "react-router-dom";
+
+// import AdminLayout from "../layouts/AdminLayout";
+// import AuthLayout from "../layouts/AuthLayout";
+// import ProtectedRoute from "./ProtectedRoute";
+
+// import Login from "../pages/auth/Login";
+// import Signup from "../pages/auth/Signup";
+// import Dashboard from "../pages/dashboard/Dashboard";
+
+// // Inventory
+// import ProductList from "../pages/products/ProductList";
+
+// // Sales
+// import OrderList from "../pages/orders/OrderList";
+
+// // Settings
+// import Settings from "../pages/settings/Settings";
+
+// const Page = ({ title }) => <div className="p-6 text-xl font-semibold">{title}</div>;
+
+// const AppRoutes = () => {
+//   return (
+//     <Routes>
+
+//       {/* ================= AUTH ================= */}
+//       <Route element={<AuthLayout />}>
+//         <Route path="/login" element={<Login />} />
+//         <Route path="/signup" element={<Signup />} />
+//       </Route>
+
+//       {/* ================= ADMIN ================= */}
+//       <Route
+//         path="/"
+//         element={
+//           <ProtectedRoute>
+//             <AdminLayout />
+//           </ProtectedRoute>
+//         }
+//       >
+//         {/* Dashboard */}
+//         <Route index element={<Dashboard />} />
+
+//         {/* Inventory */}
+//         <Route path="products" element={<ProductList />} />
+//         <Route path="products/create" element={<Page title="Create Product" />} />
+//         <Route path="products/expired" element={<Page title="Expired Products" />} />
+//         <Route path="products/low-stock" element={<Page title="Low Stock Products" />} />
+//         <Route path="categories" element={<Page title="Categories" />} />
+//         <Route path="sub-categories" element={<Page title="Sub Categories" />} />
+//         <Route path="brands" element={<Page title="Brands" />} />
+//         <Route path="units" element={<Page title="Units" />} />
+//         <Route path="variants" element={<Page title="Variants" />} />
+//         <Route path="warranties" element={<Page title="Warranties" />} />
+//         <Route path="print-barcode" element={<Page title="Print Barcode" />} />
+//         <Route path="print-qr" element={<Page title="Print QR Code" />} />
+
+//         {/* Stock */}
+//         <Route path="stock" element={<Page title="Manage Stock" />} />
+//         <Route path="stock-adjustment" element={<Page title="Stock Adjustment" />} />
+//         <Route path="stock-transfer" element={<Page title="Stock Transfer" />} />
+
+//         {/* Sales */}
+//         <Route path="sales/invoices" element={<OrderList />} />
+//         <Route path="sales/pos" element={<Page title="POS" />} />
+//         <Route path="sales/return" element={<Page title="Sales Return" />} />
+//         <Route path="sales/quotation" element={<Page title="Quotation" />} />
+
+//         {/* Purchases */}
+//         <Route path="purchases" element={<Page title="Purchase List" />} />
+//         <Route path="purchase-order" element={<Page title="Purchase Order" />} />
+//         <Route path="purchase-return" element={<Page title="Purchase Return" />} />
+
+//         {/* Promotions */}
+//         <Route path="coupons" element={<Page title="Coupons" />} />
+//         <Route path="gift-cards" element={<Page title="Gift Cards" />} />
+//         <Route path="discounts" element={<Page title="Discounts" />} />
+
+//         {/* People */}
+//         <Route path="customers" element={<Page title="Customers" />} />
+//         <Route path="suppliers" element={<Page title="Suppliers" />} />
+//         <Route path="stores" element={<Page title="Store Owners" />} />
+
+//         {/* Reports */}
+//         <Route path="reports/sales" element={<Page title="Sales Report" />} />
+//         <Route path="reports/purchase" element={<Page title="Purchase Report" />} />
+//         <Route path="reports/inventory" element={<Page title="Inventory Report" />} />
+//         <Route path="reports/profit-loss" element={<Page title="Profit & Loss" />} />
+
+//         {/* Settings */}
+//         <Route path="settings/general" element={<Settings />} />
+//         <Route path="settings/system" element={<Page title="System Settings" />} />
+//         <Route path="settings/payment" element={<Page title="Payment Settings" />} />
+//         <Route path="settings/currency" element={<Page title="Currency Settings" />} />
+//       </Route>
+
+//       {/* ================= FALLBACK ================= */}
+//       <Route path="*" element={<Navigate to="/" replace />} />
+
+//     </Routes>
+//   );
+// };
+
+// export default AppRoutes;
+import React from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
+
+import AdminLayout from "../layouts/AdminLayout";
+import AuthLayout from "../layouts/AuthLayout";
+import ProtectedRoute from "./ProtectedRoute";
+
+import Login from "../pages/auth/Login";
+import Signup from "../pages/auth/Signup";
+import Dashboard from "../pages/dashboard/Dashboard";
+
+// Inventory
+import ProductList from "../pages/products/ProductList";
+
+// Sales
+import OrderList from "../pages/orders/OrderList";
+
+// Settings
+import Settings from "../pages/settings/Settings";
+
+const Page = ({ title }) => <div className="p-6 text-xl font-semibold">{title}</div>;
 
 const AppRoutes = () => {
   return (
     <Routes>
-      {/* Auth Routes */}
+
+      {/* ================= AUTH ================= */}
       <Route element={<AuthLayout />}>
         <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
       </Route>
 
-      {/* Admin Routes */}
-      <Route element={<AdminLayout />}>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/products" element={<ProductList />} />
-        <Route path="/orders" element={<OrderList />} />
-        <Route path="/customers" element={<div className="p-6">Customers Page</div>} />
-        <Route path="/categories" element={<div className="p-6">Categories Page</div>} />
-        <Route path="/users" element={<div className="p-6">Users Page</div>} />
-        <Route path="/settings" element={<Settings />} /> {/* ✅ Changed this line! */}
-        <Route path="/profile" element={<div className="p-6">Profile Page</div>} />
+      {/* ================= ADMIN ================= */}
+      <Route
+        path="/"
+        element={
+          <ProtectedRoute>
+            <AdminLayout />
+          </ProtectedRoute>
+        }
+      >
+        {/* Dashboard */}
+        <Route index element={<Dashboard />} />
+
+        {/* Inventory */}
+        <Route path="products" element={<ProductList />} />
+        <Route path="products/create" element={<Page title="Create Product" />} />
+        <Route path="products/expired" element={<Page title="Expired Products" />} />
+        <Route path="products/low-stock" element={<Page title="Low Stock Products" />} />
+        <Route path="categories" element={<Page title="Categories" />} />
+        <Route path="sub-categories" element={<Page title="Sub Categories" />} />
+        <Route path="brands" element={<Page title="Brands" />} />
+        <Route path="units" element={<Page title="Units" />} />
+        <Route path="variants" element={<Page title="Variants" />} />
+        <Route path="warranties" element={<Page title="Warranties" />} />
+        <Route path="print-barcode" element={<Page title="Print Barcode" />} />
+        <Route path="print-qr" element={<Page title="Print QR Code" />} />
+
+        {/* Stock */}
+        <Route path="stock" element={<Page title="Manage Stock" />} />
+        <Route path="stock-adjustment" element={<Page title="Stock Adjustment" />} />
+        <Route path="stock-transfer" element={<Page title="Stock Transfer" />} />
+
+        {/* Sales */}
+        <Route path="sales/invoices" element={<OrderList />} />
+        <Route path="sales/pos" element={<Page title="POS" />} />
+        <Route path="sales/return" element={<Page title="Sales Return" />} />
+        <Route path="sales/quotation" element={<Page title="Quotation" />} />
+
+        {/* Purchases */}
+        <Route path="purchases" element={<Page title="Purchase List" />} />
+        <Route path="purchase-order" element={<Page title="Purchase Order" />} />
+        <Route path="purchase-return" element={<Page title="Purchase Return" />} />
+
+        {/* Promotions */}
+        <Route path="coupons" element={<Page title="Coupons" />} />
+        <Route path="gift-cards" element={<Page title="Gift Cards" />} />
+        <Route path="discounts" element={<Page title="Discounts" />} />
+
+        {/* People */}
+        <Route path="customers" element={<Page title="Customers" />} />
+        <Route path="suppliers" element={<Page title="Suppliers" />} />
+        <Route path="stores" element={<Page title="Store Owners" />} />
+
+        {/* Reports */}
+        <Route path="reports/sales" element={<Page title="Sales Report" />} />
+        <Route path="reports/purchase" element={<Page title="Purchase Report" />} />
+        <Route path="reports/inventory" element={<Page title="Inventory Report" />} />
+        <Route path="reports/profit-loss" element={<Page title="Profit & Loss" />} />
+
+        {/* Settings */}
+        <Route path="settings/general" element={<Settings />} />
+        <Route path="settings/system" element={<Page title="System Settings" />} />
+        <Route path="settings/payment" element={<Page title="Payment Settings" />} />
+        <Route path="settings/currency" element={<Page title="Currency Settings" />} />
       </Route>
 
-      {/* Redirects */}
+      {/* ================= FALLBACK ================= */}
       <Route path="*" element={<Navigate to="/" replace />} />
+
     </Routes>
   );
 };
