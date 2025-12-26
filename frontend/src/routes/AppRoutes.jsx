@@ -119,9 +119,11 @@ import ProductList from "../pages/products/ProductList";
 
 // Sales
 import OrderList from "../pages/orders/OrderList";
+import POSContainer from "../pages/POS/POSContainer";
 
 // Settings
 import Settings from "../pages/settings/Settings";
+
 
 const Page = ({ title }) => <div className="p-6 text-xl font-semibold">{title}</div>;
 
@@ -168,7 +170,7 @@ const AppRoutes = () => {
 
         {/* Sales */}
         <Route path="sales/invoices" element={<OrderList />} />
-        <Route path="sales/pos" element={<Page title="POS" />} />
+        <Route path="sales/POSContainer" element={<POSContainer />} />
         <Route path="sales/return" element={<Page title="Sales Return" />} />
         <Route path="sales/quotation" element={<Page title="Quotation" />} />
 
@@ -191,7 +193,6 @@ const AppRoutes = () => {
         <Route path="reports/sales" element={<Page title="Sales Report" />} />
         <Route path="reports/purchase" element={<Page title="Purchase Report" />} />
         <Route path="reports/inventory" element={<Page title="Inventory Report" />} />
-        <Route path="reports/profit-loss" element={<Page title="Profit & Loss" />} />
 
         {/* Settings */}
         <Route path="settings/general" element={<Settings />} />
@@ -207,4 +208,4 @@ const AppRoutes = () => {
   );
 };
 
-export default AppRoutes;
+export default AppRoutes;        <Route path="reports/profit-loss" element={<Page title="Profit & Loss" />} />
