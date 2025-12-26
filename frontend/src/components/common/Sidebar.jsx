@@ -7,22 +7,32 @@ import {
   Users,
   UserCog,
   Settings,
-  LogOut,
-  ChevronDown,
-  Sparkles,
-  X,
   BarChart3,
-  Archive,
+  Boxes,
   Truck,
   Percent,
-  Boxes,
+  FileText,
+  Bell,
+  CreditCard,
+  Home,
+  Database,
+  Layers,
+  Calculator,
+  Tag,
+  AlertTriangle,
+  Grid,
+  Mail,
+  Phone,
+  Calendar,
+  FileBarChart,
+  ChevronDown,
+  ChevronRight,
+  X
 } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
 
-const Sidebar = ({ isMobileOpen, onClose }) => {
+const Sidebar = ({ collapsed = false, isMobileOpen = false, onClose }) => {
   const [openMenus, setOpenMenus] = useState({});
   const [isMobile, setIsMobile] = useState(false);
-  const { logout } = useAuth();
 
   // Detect mobile screen
   useEffect(() => {
@@ -36,6 +46,7 @@ const Sidebar = ({ isMobileOpen, onClose }) => {
     setOpenMenus((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
+  // Menu items matching your AppRoutes structure
   const menuItems = [
     {
       section: 'MAIN',
@@ -43,10 +54,8 @@ const Sidebar = ({ isMobileOpen, onClose }) => {
         {
           icon: LayoutDashboard,
           label: 'Dashboard',
-          children: [
-            { label: 'Admin Dashboard', path: '/dashboard' },
-            // { label: 'Sales Dashboard', path: '/dashboard-sales' },
-          ],
+          path: '/',
+          exact: true
         },
       ],
     },
@@ -55,9 +64,9 @@ const Sidebar = ({ isMobileOpen, onClose }) => {
       items: [
         {
           icon: Package,
-          label: 'Inventory',
+          label: 'Products',
           children: [
-            { label: 'Products', path: '/products' },
+            { label: 'All Products', path: '/products' },
             { label: 'Create Product', path: '/products/create' },
             { label: 'Expired Products', path: '/products/expired' },
             { label: 'Low Stock', path: '/products/low-stock' },
@@ -95,7 +104,7 @@ const Sidebar = ({ isMobileOpen, onClose }) => {
           label: 'Sales',
           children: [
             { label: 'Invoices', path: '/sales/invoices' },
-            { label: 'POS', path: '/sales/pos' },
+            { label: 'POS', path: '/sales/POSContainer' },
             { label: 'Sales Return', path: '/sales/return' },
             { label: 'Quotation', path: '/sales/quotation' },
           ],
@@ -103,7 +112,7 @@ const Sidebar = ({ isMobileOpen, onClose }) => {
       ],
     },
     {
-      section: 'PURCHASE',
+      section: 'PURCHASES',
       items: [
         {
           icon: Truck,
@@ -117,7 +126,7 @@ const Sidebar = ({ isMobileOpen, onClose }) => {
       ],
     },
     {
-      section: 'PROMO',
+      section: 'PROMOTIONS',
       items: [
         {
           icon: Percent,
@@ -135,7 +144,7 @@ const Sidebar = ({ isMobileOpen, onClose }) => {
       items: [
         { icon: Users, label: 'Customers', path: '/customers' },
         { icon: UserCog, label: 'Suppliers', path: '/suppliers' },
-        { icon: Archive, label: 'Store Owners', path: '/stores' },
+        { icon: Home, label: 'Store Owners', path: '/stores' },
       ],
     },
     {
@@ -164,124 +173,255 @@ const Sidebar = ({ isMobileOpen, onClose }) => {
     },
   ];
 
+  // Quick access for collapsed state
+  const quickAccessItems = [
+    { icon: Calculator, label: 'Calculator', path: '/tools/calculator' },
+    { icon: AlertTriangle, label: 'Alerts', path: '/alerts' },
+    { icon: Grid, label: 'Apps', path: '/apps' },
+  ];
+
   return (
     <>
-      {/* Overlay for mobile */}
+      {/* Mobile Overlay */}
       {isMobileOpen && isMobile && (
         <div
           onClick={onClose}
-          className="fixed inset-0 bg-black/30 z-40"
+          className="fixed inset-0 bg-black/30 z-30 lg:hidden"
         />
       )}
 
+      {/* Sidebar Container */}
       <aside
-        className={`fixed lg:sticky top-0 left-0 h-screen w-72 bg-[#f9fafb] text-[#1f2937] shadow-lg z-50 flex flex-col
-        transform transition-transform duration-300 ease-in-out border-r border-[#e5e7eb]
-        ${isMobile && !isMobileOpen ? '-translate-x-full' : 'translate-x-0'}`}
+        className={`
+          fixed lg:sticky top-0 left-0 h-screen z-40 flex flex-col
+          transition-all duration-300 ease-in-out
+          bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700
+          shadow-lg
+          ${collapsed ? 'w-20' : 'w-64'}
+          ${isMobile && !isMobileOpen ? '-translate-x-full' : 'translate-x-0'}
+        `}
       >
-        {/* Header */}
-        <div className="p-5 border-b border-[#e5e7eb] flex items-center justify-between bg-[#fef3c7]">
-          <div className="flex items-center gap-3">
-            <Sparkles className="text-[#fbbf24]" />
-            <span className="font-bold text-lg text-[#1f2937]">ShopSphere</span>
-          </div>
+        {/* Logo Section */}
+        <div className={`
+          flex items-center justify-between h-16 border-b border-gray-200 dark:border-gray-700
+          ${collapsed ? 'px-2' : 'px-4'}
+        `}>
+          {collapsed ? (
+            <div className="h-8 w-8 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 flex items-center justify-center">
+              <span className="text-white font-bold text-sm">DP</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-3">
+              <div className="h-8 w-8 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 flex items-center justify-center">
+                <span className="text-white font-bold text-sm">DP</span>
+              </div>
+              <div>
+                <h1 className="font-bold text-gray-900 dark:text-white">Easy Retail</h1>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Inventory Management</p>
+              </div>
+            </div>
+          )}
+          
+          {/* Close button for mobile */}
           {isMobile && (
             <button
               onClick={onClose}
-              className="p-1 hover:bg-[#fef3c7] rounded"
+              className="lg:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
             >
-              <X className="text-[#1f2937] w-5 h-5" />
+              <X className="h-5 w-5 text-gray-600 dark:text-gray-300" />
             </button>
           )}
         </div>
 
-        {/* Menu */}
-        <nav className="flex-1 p-3 space-y-6 overflow-y-auto sidebar-scroll">
-          {menuItems.map((section) => (
-            <div key={section.section}>
-              <p className="text-xs text-[#6b7280] uppercase mb-2 px-2">
-                {section.section}
-              </p>
-
-              {section.items.map((item) => {
+        {/* Quick Access (Visible when collapsed) */}
+        {collapsed && (
+          <div className="p-3 border-b border-gray-200 dark:border-gray-700">
+            <div className="space-y-2">
+              {quickAccessItems.map((item, index) => {
                 const Icon = item.icon;
-
-                if (item.children) {
-                  const isOpen = openMenus[item.label];
-
-                  return (
-                    <div key={item.label}>
-                      <button
-                        onClick={() => toggleMenu(item.label)}
-                        className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-[#fef3c7] transition"
-                      >
-                        <div className="flex items-center gap-3">
-                          <Icon className="h-5 w-5 text-[#6b7280]" />
-                          <span className="text-[#1f2937]">{item.label}</span>
-                        </div>
-                        <ChevronDown
-                          className={`h-4 w-4 text-[#9ca3af] transition-transform ${
-                            isOpen ? 'rotate-180' : ''
-                          }`}
-                        />
-                      </button>
-
-                      {isOpen && (
-                        <div className="ml-9 mt-1 space-y-1">
-                          {item.children.map((child) => (
-                            <NavLink
-                              key={child.path}
-                              to={child.path}
-                              onClick={isMobile ? onClose : undefined}
-                              className={({ isActive }) =>
-                                `block px-3 py-1.5 rounded-md text-sm ${
-                                  isActive
-                                    ? 'bg-[#fbbf24] text-white'
-                                    : 'text-[#6b7280] hover:text-[#1f2937] hover:bg-[#fef3c7]'
-                                }`
-                              }
-                            >
-                              {child.label}
-                            </NavLink>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  );
-                }
-
                 return (
                   <NavLink
-                    key={item.path}
+                    key={index}
                     to={item.path}
-                    onClick={isMobile ? onClose : undefined}
-                    className={({ isActive }) =>
-                      `flex items-center gap-3 px-3 py-2 rounded-lg transition ${
-                        isActive
-                          ? 'bg-[#fbbf24] text-white'
-                          : 'hover:bg-[#fef3c7] text-[#1f2937]'
-                      }`
-                    }
+                    title={item.label}
+                    className={({ isActive }) => `
+                      flex items-center justify-center p-2 rounded-lg transition-colors
+                      ${isActive 
+                        ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400' 
+                        : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                      }
+                    `}
                   >
-                    <Icon className="h-5 w-5 text-[#6b7280]" />
-                    <span>{item.label}</span>
+                    <Icon className="h-5 w-5" />
                   </NavLink>
                 );
               })}
             </div>
-          ))}
+          </div>
+        )}
+
+        {/* Main Navigation */}
+        <nav className="flex-1 p-3 overflow-y-auto">
+          <div className="space-y-6">
+            {menuItems.map((section) => (
+              <div key={section.section}>
+                {/* Section Header (hidden when collapsed) */}
+                {!collapsed && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold mb-2 px-2">
+                    {section.section}
+                  </p>
+                )}
+                
+                <div className="space-y-1">
+                  {section.items.map((item) => {
+                    const Icon = item.icon;
+                    
+                    if (item.children) {
+                      const isOpen = openMenus[item.label];
+                      
+                      return (
+                        <div key={item.label}>
+                          {collapsed ? (
+                            <div className="relative group">
+                              <button
+                                title={item.label}
+                                onClick={() => toggleMenu(item.label)}
+                                className="w-full flex items-center justify-center p-2 rounded-lg text-gray-500 dark:text-gray-400 
+                                         hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-300"
+                              >
+                                <Icon className="h-5 w-5" />
+                              </button>
+                              {/* Tooltip for collapsed state */}
+                              <div className="absolute left-full top-0 ml-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg 
+                                            opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 whitespace-nowrap">
+                                {item.label}
+                                <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-gray-900"></div>
+                              </div>
+                            </div>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => toggleMenu(item.label)}
+                                className="w-full flex items-center justify-between p-2 rounded-lg text-gray-700 dark:text-gray-300 
+                                         hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                              >
+                                <div className="flex items-center gap-3">
+                                  <Icon className="h-5 w-5" />
+                                  <span>{item.label}</span>
+                                </div>
+                                <ChevronDown 
+                                  className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                                />
+                              </button>
+                              
+                              {isOpen && (
+                                <div className="ml-8 mt-1 space-y-1">
+                                  {item.children.map((child) => (
+                                    <NavLink
+                                      key={child.path}
+                                      to={child.path}
+                                      onClick={isMobile ? onClose : undefined}
+                                      className={({ isActive }) => `
+                                        block px-3 py-2 text-sm rounded-lg transition-colors
+                                        ${isActive 
+                                          ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400' 
+                                          : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                                        }
+                                      `}
+                                    >
+                                      {child.label}
+                                    </NavLink>
+                                  ))}
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div key={item.path || item.label}>
+                        {collapsed ? (
+                          <div className="relative group">
+                            <NavLink
+                              to={item.path}
+                              end={item.exact}
+                              title={item.label}
+                              onClick={isMobile ? onClose : undefined}
+                              className={({ isActive }) => `
+                                flex items-center justify-center p-2 rounded-lg transition-colors
+                                ${isActive 
+                                  ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400' 
+                                  : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                                }
+                              `}
+                            >
+                              <Icon className="h-5 w-5" />
+                            </NavLink>
+                            {/* Tooltip for collapsed state */}
+                            <div className="absolute left-full top-0 ml-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg 
+                                          opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 whitespace-nowrap">
+                              {item.label}
+                              <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-gray-900"></div>
+                            </div>
+                          </div>
+                        ) : (
+                          <NavLink
+                            to={item.path}
+                            end={item.exact}
+                            onClick={isMobile ? onClose : undefined}
+                            className={({ isActive }) => `
+                              flex items-center gap-3 p-2 rounded-lg transition-colors
+                              ${isActive 
+                                ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400' 
+                                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                              }
+                            `}
+                          >
+                            <Icon className="h-5 w-5" />
+                            <span>{item.label}</span>
+                          </NavLink>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
         </nav>
 
-        {/* Footer */}
-        <div className="p-4 border-t border-[#e5e7eb]">
-          <button
-            onClick={logout}
-            className="flex items-center gap-3 text-red-400 hover:text-red-300"
-          >
-            <LogOut className="h-5 w-5" />
-            Logout
-          </button>
-        </div>
+        {/* User Profile Footer (Visible when not collapsed) */}
+        {!collapsed && (
+          <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 flex items-center justify-center">
+                <span className="text-white font-semibold text-sm">JS</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-gray-900 dark:text-white truncate">John Smilga</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">Super Admin</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Collapse Toggle (Desktop only) */}
+        {!isMobile && (
+          <div className="p-3 border-t border-gray-200 dark:border-gray-700">
+            <button
+              onClick={onClose}
+              className="w-full flex items-center justify-center p-2 rounded-lg text-gray-500 dark:text-gray-400 
+                       hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-300"
+              title={collapsed ? 'Expand' : 'Collapse'}
+            >
+              <ChevronRight 
+                className={`h-5 w-5 transition-transform ${collapsed ? 'rotate-180' : ''}`}
+              />
+            </button>
+          </div>
+        )}
       </aside>
     </>
   );
