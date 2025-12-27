@@ -256,7 +256,7 @@ const Navbar = ({ onMenuClick, sidebarCollapsed = false }) => {
                         className="w-full flex items-center justify-center space-x-2 text-sm text-red-600 hover:text-red-700"
                       >
                         <LogOut className="h-4 w-4" />
-                        <span>Sign Out</span>
+                        <span>Log Out</span>
                       </button>
                     </div>
                   </div>
