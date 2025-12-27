@@ -14,8 +14,8 @@ const POSContainer = () => {
   const [shipping, setShipping] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   
-  // Use products from context
-  const { products, getCategories } = useProducts();
+  // Use products from context - ADD updateStockAfterSale
+  const { products, getCategories, updateStockAfterSale } = useProducts();
   
   // Create categories from actual products
   const categories = useMemo(() => {
@@ -62,9 +62,12 @@ const POSContainer = () => {
     return allCategories;
   }, [products]);
   
-  // Filter products based on selected category and search
+  // Filter products based on selected category and search - ONLY ACTIVE PRODUCTS
   const filteredProducts = useMemo(() => {
-    let filtered = products;
+    // Get only active products for POS
+    const activeProducts = products.filter(product => product.isActive === true);
+    
+    let filtered = activeProducts;
     
     if (selectedCategory !== 'all') {
       const categoryName = categories.find(c => c.id === selectedCategory)?.name;
@@ -152,15 +155,20 @@ const POSContainer = () => {
     setShipping(0);
   };
   
-  // Handle checkout
+  // Handle checkout - UPDATED to track actual sales
   const handleCheckout = () => {
     if (orderItems.length === 0) {
       alert('Please add items to the order first.');
       return;
     }
     
-    // In production, this would process payment and update inventory
+    // Update product sales with actual sold quantities
+    updateStockAfterSale(orderItems);
+    
+    // Show success message
     alert(`Order completed! Total: $${orderSummary.grandTotal}\nItems: ${orderSummary.itemCount}`);
+    
+    // Clear the order
     handleClearOrder();
   };
   

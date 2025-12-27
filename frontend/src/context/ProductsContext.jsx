@@ -13,7 +13,17 @@ export const useProducts = () => {
 export const ProductsProvider = ({ children }) => {
   const [products, setProducts] = useState(() => {
     const savedProducts = localStorage.getItem('pos-products');
-    return savedProducts ? JSON.parse(savedProducts) : [];
+    if (savedProducts) {
+      const parsed = JSON.parse(savedProducts);
+      // Migrate old products to have isActive field and reset dummy sales
+      return parsed.map(p => ({
+        ...p,
+        isActive: p.isActive !== undefined ? p.isActive : true, // Default to active
+        sales: typeof p.sales === 'number' ? p.sales : 0, // Ensure sales is a number
+        status: p.status || (p.stock > 20 ? 'in-stock' : p.stock > 5 ? 'low-stock' : 'out-of-stock')
+      }));
+    }
+    return [];
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -31,15 +41,18 @@ export const ProductsProvider = ({ children }) => {
     const newId = `PROD-${String(products.length + 1).padStart(3, '0')}`;
     const newSku = `SKU-${String(products.length + 1).padStart(3, '0')}`;
     
+    const stockNum = parseInt(productData.stock) || 0;
+    
     const newProduct = {
       id: newId,
       name: productData.name,
       category: productData.category || 'Clothing',
       price: parseFloat(productData.price) || 0,
-      stock: parseInt(productData.stock) || 0,
-      status: productData.stock > 20 ? 'in-stock' : 
-               productData.stock > 5 ? 'low-stock' : 'out-of-stock',
-      sales: Math.floor(Math.random() * 200), // Random sales for demo
+      stock: stockNum,
+      status: stockNum > 20 ? 'in-stock' : 
+               stockNum > 5 ? 'low-stock' : 'out-of-stock',
+      isActive: true, // CRITICAL: Always active by default
+      sales: 0, // ✅ REAL DATA: Start with 0 sales
       description: productData.description || 'No description available.',
       sku: newSku,
       image: productData.image || '📦',
@@ -64,6 +77,7 @@ export const ProductsProvider = ({ children }) => {
       const updatedProducts = prev.map(product => {
         if (product.id === productId) {
           const updatedStock = updatedData.stock !== undefined ? parseInt(updatedData.stock) : product.stock;
+          const updatedIsActive = updatedData.isActive !== undefined ? updatedData.isActive : product.isActive;
           
           return {
             ...product,
@@ -71,6 +85,7 @@ export const ProductsProvider = ({ children }) => {
             stock: updatedStock,
             status: updatedStock > 20 ? 'in-stock' : 
                     updatedStock > 5 ? 'low-stock' : 'out-of-stock',
+            isActive: updatedIsActive,
             updatedAt: new Date().toISOString(),
             price: updatedData.price !== undefined ? parseFloat(updatedData.price) : product.price
           };
@@ -89,6 +104,36 @@ export const ProductsProvider = ({ children }) => {
     setProducts(prev => prev.filter(product => product.id !== productId));
     setIsLoading(false);
   }, []);
+
+  // Toggle product active status
+  const toggleProductActive = useCallback((productId) => {
+    setIsLoading(true);
+    
+    setProducts(prev => {
+      return prev.map(product => {
+        if (product.id === productId) {
+          return {
+            ...product,
+            isActive: !product.isActive,
+            updatedAt: new Date().toISOString()
+          };
+        }
+        return product;
+      });
+    });
+    
+    setIsLoading(false);
+  }, []);
+
+  // Get products for POS (only active ones)
+  const getPOSProducts = useMemo(() => {
+    return products.filter(product => product.isActive === true);
+  }, [products]);
+
+  // Get products for admin (all products)
+  const getAdminProducts = useMemo(() => {
+    return products;
+  }, [products]);
 
   // Clear all products
   const clearAllProducts = useCallback(() => {
@@ -122,6 +167,7 @@ export const ProductsProvider = ({ children }) => {
   // Get product statistics
   const getProductStats = useMemo(() => {
     const totalProducts = products.length;
+    const activeProducts = products.filter(p => p.isActive).length;
     const totalStock = products.reduce((sum, product) => sum + product.stock, 0);
     const totalSales = products.reduce((sum, product) => sum + (product.sales || 0), 0);
     const totalValue = products.reduce((sum, product) => sum + (product.price * product.stock), 0);
@@ -133,7 +179,8 @@ export const ProductsProvider = ({ children }) => {
         name: category,
         count: categoryProducts.length,
         stock: categoryProducts.reduce((sum, p) => sum + p.stock, 0),
-        value: categoryProducts.reduce((sum, p) => sum + (p.price * p.stock), 0)
+        value: categoryProducts.reduce((sum, p) => sum + (p.price * p.stock), 0),
+        sales: categoryProducts.reduce((sum, p) => sum + (p.sales || 0), 0)
       };
     });
     
@@ -145,6 +192,7 @@ export const ProductsProvider = ({ children }) => {
     
     return {
       totalProducts,
+      activeProducts,
       totalStock,
       totalSales,
       totalValue: parseFloat(totalValue.toFixed(2)),
@@ -164,21 +212,26 @@ export const ProductsProvider = ({ children }) => {
   const importProducts = useCallback((importedProducts) => {
     setIsLoading(true);
     
-    const newProducts = importedProducts.map((product, index) => ({
-      id: product.id || `PROD-${String(products.length + index + 1).padStart(3, '0')}`,
-      name: product.name,
-      category: product.category || 'Clothing',
-      price: parseFloat(product.price) || 0,
-      stock: parseInt(product.stock) || 0,
-      status: product.stock > 20 ? 'in-stock' : 
-               product.stock > 5 ? 'low-stock' : 'out-of-stock',
-      sales: product.sales || Math.floor(Math.random() * 200),
-      description: product.description || 'No description available.',
-      sku: product.sku || `SKU-${String(products.length + index + 1).padStart(3, '0')}`,
-      image: product.image || '📦',
-      createdAt: product.createdAt || new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    }));
+    const newProducts = importedProducts.map((product, index) => {
+      const stockNum = parseInt(product.stock) || 0;
+      
+      return {
+        id: product.id || `PROD-${String(products.length + index + 1).padStart(3, '0')}`,
+        name: product.name,
+        category: product.category || 'Clothing',
+        price: parseFloat(product.price) || 0,
+        stock: stockNum,
+        status: stockNum > 20 ? 'in-stock' : 
+                 stockNum > 5 ? 'low-stock' : 'out-of-stock',
+        isActive: product.isActive !== undefined ? product.isActive : true,
+        sales: typeof product.sales === 'number' ? product.sales : 0, // ✅ Use actual sales from import or 0
+        description: product.description || 'No description available.',
+        sku: product.sku || `SKU-${String(products.length + index + 1).padStart(3, '0')}`,
+        image: product.image || '📦',
+        createdAt: product.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+    });
     
     setProducts(prev => [...prev, ...newProducts]);
     setIsLoading(false);
@@ -200,7 +253,7 @@ export const ProductsProvider = ({ children }) => {
     return products;
   }, [products]);
 
-  // Update stock after sale (for POS checkout)
+  // Update stock after sale (for POS checkout) - REAL SALES TRACKING
   const updateStockAfterSale = useCallback((soldItems) => {
     setIsLoading(true);
     
@@ -214,7 +267,7 @@ export const ProductsProvider = ({ children }) => {
             stock: Math.max(0, newStock),
             status: newStock > 20 ? 'in-stock' : 
                     newStock > 5 ? 'low-stock' : 'out-of-stock',
-            sales: (product.sales || 0) + soldItem.quantity,
+            sales: (product.sales || 0) + soldItem.quantity, // ✅ REAL DATA: Add actual quantity sold
             updatedAt: new Date().toISOString()
           };
         }
@@ -272,15 +325,19 @@ export const ProductsProvider = ({ children }) => {
       { id: 'PROD-005', name: 'Airpod 2', category: 'Electronics', price: 5478, stock: 47, image: '🎧', sku: 'SKU-005' },
     ];
     
-    setProducts(demoProducts.map(product => ({
-      ...product,
-      status: product.stock > 20 ? 'in-stock' : 
-              product.stock > 5 ? 'low-stock' : 'out-of-stock',
-      sales: Math.floor(Math.random() * 200),
-      description: 'High quality product with excellent performance.',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    })));
+    setProducts(demoProducts.map(product => {
+      const stockNum = product.stock || 0;
+      return {
+        ...product,
+        status: stockNum > 20 ? 'in-stock' : 
+                stockNum > 5 ? 'low-stock' : 'out-of-stock',
+        isActive: true,
+        sales: 0,
+        description: 'High quality product with excellent performance.',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+    }));
   }, []);
 
   const value = useMemo(() => ({
@@ -293,6 +350,7 @@ export const ProductsProvider = ({ children }) => {
     updateProduct,
     deleteProduct,
     clearAllProducts,
+    toggleProductActive,
     
     // Getters
     getProductById,
@@ -303,10 +361,6 @@ export const ProductsProvider = ({ children }) => {
     getLowStockProducts,
     getOutOfStockProducts,
     
-    // Import/Export
-    importProducts,
-    exportProducts,
-    
     // POS Functions
     updateStockAfterSale,
     
@@ -315,6 +369,14 @@ export const ProductsProvider = ({ children }) => {
     
     // Demo data
     resetToDemoData,
+    
+    // POS-specific getters
+    getPOSProducts,
+    getAdminProducts,
+    
+    // Import/Export
+    importProducts,
+    exportProducts,
     
     // Raw setter (use with caution)
     setProducts
@@ -325,6 +387,7 @@ export const ProductsProvider = ({ children }) => {
     updateProduct,
     deleteProduct,
     clearAllProducts,
+    toggleProductActive,
     getProductById,
     getProductsByCategory,
     searchProducts,
@@ -332,11 +395,13 @@ export const ProductsProvider = ({ children }) => {
     getCategories,
     getLowStockProducts,
     getOutOfStockProducts,
-    importProducts,
-    exportProducts,
     updateStockAfterSale,
     bulkUpdateProducts,
-    resetToDemoData
+    resetToDemoData,
+    getPOSProducts,
+    getAdminProducts,
+    importProducts,
+    exportProducts
   ]);
 
   return (
