@@ -108,59 +108,64 @@ const ProductList = () => {
     { name: 'Fitness', count: products.filter(p => p.category === 'Fitness').length, gradient: 'from-red-400 via-rose-400 to-pink-400', icon: '🏋️', darkGradient: 'from-red-500 via-rose-500 to-pink-500' },
   ];
 
-  // Calculate status stats based on actual products - FIXED LOGIC
-  const calculateStatusStats = () => {
-    // Recalculate status for all products to ensure accuracy
-    const productsWithCorrectedStatus = products.map(product => ({
-      ...product,
-      status: calculateStockStatus(product.stock)
-    }));
+  // Calculate status stats based on actual products - FIXED COMPLETELY
+const calculateStatusStats = () => {
+  // Recalculate status for all products to ensure accuracy
+  const productsWithCorrectedStatus = products.map(product => ({
+    ...product,
+    // Ensure status matches current stock
+    status: calculateStockStatus(product.stock)
+  }));
 
-    const inStock = productsWithCorrectedStatus.filter(p => p.status === 'in-stock').length;
-    const lowStock = productsWithCorrectedStatus.filter(p => p.status === 'low-stock').length;
-    const outOfStock = productsWithCorrectedStatus.filter(p => p.status === 'out-of-stock').length;
-    
-    return [
-      { 
-        label: 'In Stock', 
-        count: inStock, 
-        gradient: 'from-emerald-400 to-green-400',
-        darkGradient: 'from-emerald-500 to-green-500',
-        icon: '✅',
-        color: isDarkMode ? 'bg-emerald-500' : 'bg-emerald-400'
-      },
-      { 
-        label: 'Low Stock', 
-        count: lowStock, 
-        gradient: 'from-amber-400 to-orange-400',
-        darkGradient: 'from-amber-500 to-orange-500',
-        icon: '⚠️',
-        color: isDarkMode ? 'bg-amber-500' : 'bg-amber-400'
-      },
-      { 
-        label: 'Out of Stock', 
-        count: outOfStock, 
-        gradient: 'from-red-400 to-rose-400',
-        darkGradient: 'from-red-500 to-rose-500',
-        icon: '❌',
-        color: isDarkMode ? 'bg-red-500' : 'bg-red-400'
-      },
-    ];
-  };
+  const inStock = productsWithCorrectedStatus.filter(p => p.status === 'in-stock').length;
+  const lowStock = productsWithCorrectedStatus.filter(p => p.status === 'low-stock').length;
+  const outOfStock = productsWithCorrectedStatus.filter(p => p.status === 'out-of-stock').length;
+  
+  return [
+    { 
+      label: 'In Stock', 
+      count: inStock, 
+      gradient: 'from-emerald-400 to-green-400',
+      darkGradient: 'from-emerald-500 to-green-500',
+      icon: '✅',
+      color: isDarkMode ? 'bg-emerald-500' : 'bg-emerald-400'
+    },
+    { 
+      label: 'Low Stock', 
+      count: lowStock, 
+      gradient: 'from-amber-400 to-orange-400',
+      darkGradient: 'from-amber-500 to-orange-500',
+      icon: '⚠️',
+      color: isDarkMode ? 'bg-amber-500' : 'bg-amber-400'
+    },
+    { 
+      label: 'Out of Stock', 
+      count: outOfStock, 
+      gradient: 'from-red-400 to-rose-400',
+      darkGradient: 'from-red-500 to-rose-500',
+      icon: '❌',
+      color: isDarkMode ? 'bg-red-500' : 'bg-red-500'
+    },
+  ];
+};
 
   const statusStats = calculateStatusStats();
 
-  // Filter products based on search, category, and status
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(search.toLowerCase()) ||
-                         product.id.toLowerCase().includes(search.toLowerCase()) ||
-                         product.category.toLowerCase().includes(search.toLowerCase());
-    
-    const matchesCategory = categoryFilter === 'All Categories' || product.category === categoryFilter;
-    const matchesStatus = statusFilter === 'All Status' || product.status === statusFilter.toLowerCase().replace(' ', '-');
-    
-    return matchesSearch && matchesCategory && matchesStatus;
-  });
+
+const filteredProducts = products.filter(product => {
+  const matchesSearch = product.name.toLowerCase().includes(search.toLowerCase()) ||
+                       product.id.toLowerCase().includes(search.toLowerCase()) ||
+                       product.category.toLowerCase().includes(search.toLowerCase());
+  
+  const matchesCategory = categoryFilter === 'All Categories' || product.category === categoryFilter;
+  
+  // FIXED: Use recalculated status for filtering to match the inventory status
+  const currentProductStatus = calculateStockStatus(product.stock);
+  const matchesStatus = statusFilter === 'All Status' || 
+                       currentProductStatus === statusFilter.toLowerCase().replace(' ', '-');
+  
+  return matchesSearch && matchesCategory && matchesStatus;
+});
 
   // Animated Add Product button handler
   const handleAddButtonClick = () => {
@@ -1078,222 +1083,228 @@ const ProductList = () => {
                 
                 <div className="overflow-x-auto">
                   <div className="min-w-full">
+
                     {/* Mobile Card View for Small Screens */}
-                    <div className="lg:hidden space-y-2 p-3 sm:p-4">
-                      {paginatedProducts.map((product) => (
-                        <div key={product.id} className={`rounded-lg border p-3 sm:p-4 hover:shadow-md transition-shadow ${isDarkMode ? 'bg-gray-800 border-gray-700 hover:shadow-gray-900' : 'bg-white border-gray-200'}`}>
-                          <div className="flex items-start justify-between mb-3">
-                            <div className="flex items-start gap-3">
-                              <div className="relative h-10 w-10 sm:h-12 sm:w-12 rounded-lg overflow-hidden flex-shrink-0">
-                                {product.image && (product.image.startsWith('http') || product.image.startsWith('data:image')) ? (
-                                  <img 
-                                    src={product.image} 
-                                    alt={product.name}
-                                    className="absolute inset-0 w-full h-full object-cover"
-                                    onError={(e) => {
-                                      e.target.onerror = null;
-                                      e.target.src = 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=400&fit=crop';
-                                    }}
-                                  />
-                                ) : (
-                                  <div className="absolute inset-0 flex items-center justify-center text-lg">
-                                    {getEmojiFromImage(product.image)}
-                                  </div>
-                                )}
-                              </div>
-                              <div className="min-w-0">
-                                <h3 className={`font-medium text-sm sm:text-base truncate ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{product.name}</h3>
-                                <p className={`text-xs truncate ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{product.id}</p>
-                                <div className="flex items-center gap-2 mt-1">
-                                  <span className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>{product.category}</span>
-                                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
-                                    product.status === 'in-stock' ? (isDarkMode ? 'bg-emerald-900/30 text-emerald-300' : 'bg-emerald-50 text-emerald-700') :
-                                    product.status === 'low-stock' ? (isDarkMode ? 'bg-amber-900/30 text-amber-300' : 'bg-amber-50 text-amber-700') :
-                                    (isDarkMode ? 'bg-red-900/30 text-red-300' : 'bg-red-50 text-red-700')
-                                  }`}>
-                                    {product.status === 'in-stock' ? 'In Stock' : 
-                                     product.status === 'low-stock' ? 'Low Stock' : 'Out of Stock'}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="grid grid-cols-2 gap-2 mb-3">
-                            <div className={`text-center p-2 rounded ${isDarkMode ? 'bg-gray-700/50' : 'bg-gray-50'}`}>
-                              <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Price</div>
-                              <div className={`font-semibold text-sm ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
-                                ${typeof product.price === 'number' ? product.price.toFixed(2) : product.price}
-                              </div>
-                            </div>
-                            <div className={`text-center p-2 rounded ${isDarkMode ? 'bg-gray-700/50' : 'bg-gray-50'}`}>
-                              <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Stock</div>
-                              <div className={`font-semibold text-sm ${
-                                product.status === 'in-stock' ? (isDarkMode ? 'text-emerald-400' : 'text-emerald-600') :
-                                product.status === 'low-stock' ? (isDarkMode ? 'text-amber-400' : 'text-amber-600') :
-                                (isDarkMode ? 'text-red-400' : 'text-red-500')
-                              }`}>
-                                {product.stock} units
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center justify-between pt-3 border-t border-gray-300 dark:border-gray-700">
-                            <div className="flex items-center gap-1">
-                              <TrendingUp className="h-3 w-3 text-emerald-500 dark:text-emerald-400" />
-                              <span className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Sales: {product.sales || 0}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <button 
-                                onClick={() => handleViewProduct(product)}
-                                className={`p-1 rounded transition-all duration-300 ${isDarkMode ? 'hover:bg-blue-900/30' : 'hover:bg-blue-50/50'}`}
-                              >
-                                <Eye className={`h-3 w-3 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
-                              </button>
-                              <button 
-                                onClick={() => handleEditClick(product)}
-                                className={`p-1 rounded transition-all duration-300 ${isDarkMode ? 'hover:bg-blue-900/30' : 'hover:bg-blue-50/50'}`}
-                              >
-                                <Edit className="h-3 w-3 text-blue-600 dark:text-blue-400" />
-                              </button>
-                              <button 
-                                ref={el => deleteButtonRefs.current[product.id] = el}
-                                onClick={() => handleDeleteClick(product)}
-                                className={`p-1 rounded transition-all duration-300 ${isDarkMode ? 'hover:bg-red-900/30' : 'hover:bg-red-50/50'}`}
-                              >
-                                <Trash2 className="h-3 w-3 text-red-500 dark:text-red-400" />
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+<div className="lg:hidden space-y-2 p-3 sm:p-4">
+  {paginatedProducts.map((product) => (
+    <div key={product.id} className={`rounded-lg border p-3 sm:p-4 hover:shadow-md transition-shadow ${isDarkMode ? 'bg-gray-800 border-gray-700 hover:shadow-gray-900' : 'bg-white border-gray-200'}`}>
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex items-start gap-3">
+          <div className="relative h-10 w-10 sm:h-12 sm:w-12 rounded-lg overflow-hidden flex-shrink-0">
+            {product.image && (product.image.startsWith('http') || product.image.startsWith('data:image')) ? (
+              <img 
+                src={product.image} 
+                alt={product.name}
+                className="absolute inset-0 w-full h-full object-cover"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=400&fit=crop';
+                }}
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center text-lg">
+                {getEmojiFromImage(product.image)}
+              </div>
+            )}
+          </div>
+          <div className="min-w-0">
+            <h3 className={`font-medium text-sm sm:text-base truncate ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{product.name}</h3>
+            <p className={`text-xs truncate ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{product.id}</p>
+            
+            {/* REPLACE THIS ENTIRE SECTION */}
+            <div className="flex items-center gap-2 mt-1">
+              <span className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>{product.category}</span>
+              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
+                calculateStockStatus(product.stock) === 'in-stock' ? (isDarkMode ? 'bg-emerald-900/30 text-emerald-300' : 'bg-emerald-50 text-emerald-700') :
+                calculateStockStatus(product.stock) === 'low-stock' ? (isDarkMode ? 'bg-amber-900/30 text-amber-300' : 'bg-amber-50 text-amber-700') :
+                (isDarkMode ? 'bg-red-900/30 text-red-300' : 'bg-red-50 text-red-700')
+              }`}>
+                {calculateStockStatus(product.stock) === 'in-stock' ? 'In Stock' : 
+                 calculateStockStatus(product.stock) === 'low-stock' ? 'Low Stock' : 'Out of Stock'}
+              </span>
+            </div>
+            {/* END OF REPLACED SECTION */}
+          </div>
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-2 gap-2 mb-3">
+        <div className={`text-center p-2 rounded ${isDarkMode ? 'bg-gray-700/50' : 'bg-gray-50'}`}>
+          <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Price</div>
+          <div className={`font-semibold text-sm ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+            ${typeof product.price === 'number' ? product.price.toFixed(2) : product.price}
+          </div>
+        </div>
+        <div className={`text-center p-2 rounded ${isDarkMode ? 'bg-gray-700/50' : 'bg-gray-50'}`}>
+          <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Stock</div>
+          <div className={`font-semibold text-sm ${
+            calculateStockStatus(product.stock) === 'in-stock' ? (isDarkMode ? 'text-emerald-400' : 'text-emerald-600') :
+            calculateStockStatus(product.stock) === 'low-stock' ? (isDarkMode ? 'text-amber-400' : 'text-amber-600') :
+            (isDarkMode ? 'text-red-400' : 'text-red-500')
+          }`}>
+            {product.stock} units
+          </div>
+        </div>
+      </div>
+      
+      <div className="flex items-center justify-between pt-3 border-t border-gray-300 dark:border-gray-700">
+        <div className="flex items-center gap-1">
+          <TrendingUp className="h-3 w-3 text-emerald-500 dark:text-emerald-400" />
+          <span className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Sales: {product.sales || 0}</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <button 
+            onClick={() => handleViewProduct(product)}
+            className={`p-1 rounded transition-all duration-300 ${isDarkMode ? 'hover:bg-blue-900/30' : 'hover:bg-blue-50/50'}`}
+          >
+            <Eye className={`h-3 w-3 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+          </button>
+          <button 
+            onClick={() => handleEditClick(product)}
+            className={`p-1 rounded transition-all duration-300 ${isDarkMode ? 'hover:bg-blue-900/30' : 'hover:bg-blue-50/50'}`}
+          >
+            <Edit className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+          </button>
+          <button 
+            ref={el => deleteButtonRefs.current[product.id] = el}
+            onClick={() => handleDeleteClick(product)}
+            className={`p-1 rounded transition-all duration-300 ${isDarkMode ? 'hover:bg-red-900/30' : 'hover:bg-red-50/50'}`}
+          >
+            <Trash2 className="h-3 w-3 text-red-500 dark:text-red-400" />
+          </button>
+        </div>
+      </div>
+    </div>
+  ))}
+</div>
                     
-                    {/* Desktop Table View */}
-                    <table className="hidden lg:table min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                      <thead className={`${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
-                        <tr>
-                          <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
-                            Product
-                          </th>
-                          <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
-                            Category
-                          </th>
-                          <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
-                            Price
-                          </th>
-                          <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
-                            Stock
-                          </th>
-                          <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
-                            Status
-                          </th>
-                          <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
-                            Sales
-                          </th>
-                          <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
-                            Actions
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className={`${isDarkMode ? 'bg-gray-800 divide-gray-700' : 'bg-white divide-gray-200'}`}>
-                        {paginatedProducts.map((product) => (
-                          <tr key={product.id} className={`${isDarkMode ? 'hover:bg-gray-700/50' : 'hover:bg-gray-50'} transition-colors duration-150`}>
-                            <td className="px-4 py-3 whitespace-nowrap">
-                              <div className="flex items-center gap-3">
-                                <div className="relative h-10 w-10 rounded-lg overflow-hidden flex-shrink-0">
-                                  {product.image && (product.image.startsWith('http') || product.image.startsWith('data:image')) ? (
-                                    <img 
-                                      src={product.image} 
-                                      alt={product.name}
-                                      className="absolute inset-0 w-full h-full object-cover"
-                                      onError={(e) => {
-                                        e.target.onerror = null;
-                                        e.target.src = 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=400&fit=crop';
-                                      }}
-                                    />
-                                  ) : (
-                                    <div className="absolute inset-0 flex items-center justify-center text-lg">
-                                      {getEmojiFromImage(product.image)}
-                                    </div>
-                                  )}
-                                </div>
-                                <div className="min-w-0">
-                                  <div className={`font-medium text-sm truncate ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{product.name}</div>
-                                  <div className={`text-xs truncate ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{product.id}</div>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap">
-                              <div className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>{product.category}</div>
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap">
-                              <span className={`font-semibold text-sm ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
-                                ${typeof product.price === 'number' ? product.price.toFixed(2) : product.price}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap">
-                              <div className="flex items-center gap-2">
-                                <span className={`font-semibold text-sm ${
-                                  product.status === 'in-stock' ? (isDarkMode ? 'text-emerald-400' : 'text-emerald-600') :
-                                  product.status === 'low-stock' ? (isDarkMode ? 'text-amber-400' : 'text-amber-600') :
-                                  (isDarkMode ? 'text-red-400' : 'text-red-500')
-                                }`}>
-                                  {product.stock} units
-                                </span>
-                                {product.status === 'low-stock' && (
-                                  <AlertCircle className="h-4 w-4 text-amber-500 dark:text-amber-400" />
-                                )}
-                              </div>
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap">
-                              <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-medium ${
-                                product.status === 'in-stock' ? (isDarkMode ? 'bg-emerald-900/30 text-emerald-300 border-emerald-800' : 'bg-emerald-50 text-emerald-700 border-emerald-200') :
-                                product.status === 'low-stock' ? (isDarkMode ? 'bg-amber-900/30 text-amber-300 border-amber-800' : 'bg-amber-50 text-amber-700 border-amber-200') :
-                                (isDarkMode ? 'bg-red-900/30 text-red-300 border-red-800' : 'bg-red-50 text-red-700 border-red-200')
-                              }`}>
-                                {product.status === 'in-stock' ? (
-                                  <CheckCircle className="h-3 w-3" />
-                                ) : (
-                                  <AlertCircle className="h-3 w-3" />
-                                )}
-                                {product.status === 'in-stock' ? 'In Stock' : product.status === 'low-stock' ? 'Low Stock' : 'Out of Stock'}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap">
-                              <div className="flex items-center gap-2">
-                                <TrendingUp className="h-4 w-4 text-emerald-500 dark:text-emerald-400" />
-                                <span className={`font-medium text-sm ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{product.sales || 0}</span>
-                              </div>
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap">
-                              <div className="flex items-center space-x-2">
-                                <button 
-                                  onClick={() => handleViewProduct(product)}
-                                  className={`p-1 rounded-lg transition-all duration-300 hover:scale-110 ${isDarkMode ? 'hover:bg-blue-900/30' : 'hover:bg-blue-50/50'}`}
-                                >
-                                  <Eye className={`h-4 w-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
-                                </button>
-                                <button 
-                                  onClick={() => handleEditClick(product)}
-                                  className={`p-1 rounded-lg transition-all duration-300 hover:scale-110 ${isDarkMode ? 'hover:bg-blue-900/30' : 'hover:bg-blue-50/50'}`}
-                                >
-                                  <Edit className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                                </button>
-                                <button 
-                                  ref={el => deleteButtonRefs.current[product.id] = el}
-                                  onClick={() => handleDeleteClick(product)}
-                                  className={`p-1 rounded-lg transition-all duration-300 hover:scale-110 ${isDarkMode ? 'hover:bg-red-900/30' : 'hover:bg-red-50/50'}`}
-                                >
-                                  <Trash2 className="h-4 w-4 text-red-500 dark:text-red-400" />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                   {/* Desktop Table View */}
+<table className="hidden lg:table min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+  <thead className={`${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
+    <tr>
+      <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+        Product
+      </th>
+      <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+        Category
+      </th>
+      <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+        Price
+      </th>
+      <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+        Stock
+      </th>
+      <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+        Status
+      </th>
+      <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+        Sales
+      </th>
+      <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+        Actions
+      </th>
+    </tr>
+  </thead>
+  <tbody className={`${isDarkMode ? 'bg-gray-800 divide-gray-700' : 'bg-white divide-gray-200'}`}>
+    {paginatedProducts.map((product) => (
+      <tr key={product.id} className={`${isDarkMode ? 'hover:bg-gray-700/50' : 'hover:bg-gray-50'} transition-colors duration-150`}>
+        <td className="px-4 py-3 whitespace-nowrap">
+          <div className="flex items-center gap-3">
+            <div className="relative h-10 w-10 rounded-lg overflow-hidden flex-shrink-0">
+              {product.image && (product.image.startsWith('http') || product.image.startsWith('data:image')) ? (
+                <img 
+                  src={product.image} 
+                  alt={product.name}
+                  className="absolute inset-0 w-full h-full object-cover"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=400&fit=crop';
+                  }}
+                />
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center text-lg">
+                  {getEmojiFromImage(product.image)}
+                </div>
+              )}
+            </div>
+            <div className="min-w-0">
+              <div className={`font-medium text-sm truncate ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{product.name}</div>
+              <div className={`text-xs truncate ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{product.id}</div>
+            </div>
+          </div>
+        </td>
+        <td className="px-4 py-3 whitespace-nowrap">
+          <div className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>{product.category}</div>
+        </td>
+        <td className="px-4 py-3 whitespace-nowrap">
+          <span className={`font-semibold text-sm ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+            ${typeof product.price === 'number' ? product.price.toFixed(2) : product.price}
+          </span>
+        </td>
+        <td className="px-4 py-3 whitespace-nowrap">
+          {/* Stock cell - updated to show dynamic color based on current stock */}
+          <div className="flex items-center gap-2">
+            <span className={`font-semibold text-sm ${
+              calculateStockStatus(product.stock) === 'in-stock' ? (isDarkMode ? 'text-emerald-400' : 'text-emerald-600') :
+              calculateStockStatus(product.stock) === 'low-stock' ? (isDarkMode ? 'text-amber-400' : 'text-amber-600') :
+              (isDarkMode ? 'text-red-400' : 'text-red-500')
+            }`}>
+              {product.stock} units
+            </span>
+            {calculateStockStatus(product.stock) === 'low-stock' && (
+              <AlertCircle className="h-4 w-4 text-amber-500 dark:text-amber-400" />
+            )}
+          </div>
+        </td>
+        <td className="px-4 py-3 whitespace-nowrap">
+          {/* Status cell - updated to use calculateStockStatus */}
+          <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-medium ${
+            calculateStockStatus(product.stock) === 'in-stock' ? (isDarkMode ? 'bg-emerald-900/30 text-emerald-300 border-emerald-800' : 'bg-emerald-50 text-emerald-700 border-emerald-200') :
+            calculateStockStatus(product.stock) === 'low-stock' ? (isDarkMode ? 'bg-amber-900/30 text-amber-300 border-amber-800' : 'bg-amber-50 text-amber-700 border-amber-200') :
+            (isDarkMode ? 'bg-red-900/30 text-red-300 border-red-800' : 'bg-red-50 text-red-700 border-red-200')
+          }`}>
+            {calculateStockStatus(product.stock) === 'in-stock' ? (
+              <CheckCircle className="h-3 w-3" />
+            ) : (
+              <AlertCircle className="h-3 w-3" />
+            )}
+            {calculateStockStatus(product.stock) === 'in-stock' ? 'In Stock' : 
+             calculateStockStatus(product.stock) === 'low-stock' ? 'Low Stock' : 'Out of Stock'}
+          </span>
+        </td>
+        <td className="px-4 py-3 whitespace-nowrap">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-emerald-500 dark:text-emerald-400" />
+            <span className={`font-medium text-sm ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{product.sales || 0}</span>
+          </div>
+        </td>
+        <td className="px-4 py-3 whitespace-nowrap">
+          <div className="flex items-center space-x-2">
+            <button 
+              onClick={() => handleViewProduct(product)}
+              className={`p-1 rounded-lg transition-all duration-300 hover:scale-110 ${isDarkMode ? 'hover:bg-blue-900/30' : 'hover:bg-blue-50/50'}`}
+            >
+              <Eye className={`h-4 w-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+            </button>
+            <button 
+              onClick={() => handleEditClick(product)}
+              className={`p-1 rounded-lg transition-all duration-300 hover:scale-110 ${isDarkMode ? 'hover:bg-blue-900/30' : 'hover:bg-blue-50/50'}`}
+            >
+              <Edit className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            </button>
+            <button 
+              ref={el => deleteButtonRefs.current[product.id] = el}
+              onClick={() => handleDeleteClick(product)}
+              className={`p-1 rounded-lg transition-all duration-300 hover:scale-110 ${isDarkMode ? 'hover:bg-red-900/30' : 'hover:bg-red-50/50'}`}
+            >
+              <Trash2 className="h-4 w-4 text-red-500 dark:text-red-400" />
+            </button>
+          </div>
+        </td>
+      </tr>
+    ))}
+  </tbody>
+</table>                  </div>
                 </div>
                 
                 <div className={`p-3 sm:p-4 lg:p-6 border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-300'}`}>
@@ -1337,122 +1348,289 @@ const ProductList = () => {
             </div>
           )}
 
-          {/* Stats Grid - Only show if there are products - Responsive with FIXED status */}
-          {products.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
-              {/* Inventory Status - FIXED with animations */}
-              <div className={`${isDarkMode ? 'card-border-dark' : 'card-border'}`}>
-                <div className={`${isDarkMode ? 'card-inner-dark' : 'card-inner'}`}>
-                  <div className="p-3 sm:p-4 lg:p-5">
-                    <div className="flex items-center justify-between mb-3 sm:mb-4 lg:mb-6">
-                      <div>
-                        <h3 className={`text-base sm:text-lg font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Inventory Status</h3>
-                        <p className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Real-time stock overview</p>
-                      </div>
-                      <div className={`p-1.5 sm:p-2 rounded-lg ${isDarkMode ? 'bg-amber-900/30' : 'bg-amber-50'}`}>
-                        <Package className="h-4 w-4 sm:h-5 sm:w-5 text-amber-600 dark:text-amber-400" />
-                      </div>
+          {/* Stats Grid - Only show if there are products */}
+{products.length > 0 && (
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
+    {/* Inventory Status - PROPORTIONAL BARS WITH FULL COLOR */}
+    <div className={`${isDarkMode ? 'card-border-dark' : 'card-border'} ${animateStats ? 'animate-pulse' : ''}`}>
+      <div className={`${isDarkMode ? 'card-inner-dark' : 'card-inner'}`}>
+        <div className="p-3 sm:p-4 lg:p-5">
+          <div className="flex items-center justify-between mb-3 sm:mb-4 lg:mb-6">
+            <div>
+              <h3 className={`text-base sm:text-lg font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Inventory Status</h3>
+              <p className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Real-time stock overview</p>
+            </div>
+            <div className={`p-1.5 sm:p-2 rounded-lg ${isDarkMode ? 'bg-amber-900/30' : 'bg-amber-50'} ${animateStats ? 'animate-spin' : ''}`}>
+              <Package className="h-4 w-4 sm:h-5 sm:w-5 text-amber-600 dark:text-amber-400" />
+            </div>
+          </div>
+          
+          <div className="space-y-2 sm:space-y-3 lg:space-y-4">
+            {statusStats.map((stat, index) => {
+              // Calculate exact percentage (0-100%)
+              const percentage = products.length > 0 
+                ? (stat.count / products.length) * 100
+                : 0;
+              
+              return (
+                <div key={stat.label} className="group space-y-1 sm:space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs sm:text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                        {stat.label}
+                      </span>
+                      <span className={`text-xs ${stat.color} text-white px-1.5 py-0.5 rounded-full transition-all duration-300 ${
+                        stat.count > 0 ? 'animate-bounce' : 'opacity-30'
+                      }`}>
+                        {stat.icon}
+                      </span>
                     </div>
-                    
-                    <div className="space-y-2 sm:space-y-3 lg:space-y-4">
-                      {statusStats.map((stat) => (
-                        <div key={stat.label} className="space-y-1 sm:space-y-2">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <span className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>{stat.label}</span>
-                              <span className={`text-xs ${stat.color} text-white px-1.5 py-0.5 rounded-full animate-pulse-once`}>
-                                {stat.icon}
-                              </span>
-                            </div>
-                            <span className={`text-xs sm:text-sm font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{stat.count} products</span>
-                          </div>
-                          <div className={`w-full h-1.5 sm:h-2 rounded-full overflow-hidden ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>
-                            <div 
-                              className={`h-full rounded-full transition-all duration-1000 animate-progress-glow ${isDarkMode ? stat.darkGradient : stat.gradient}`}
-                              style={{ 
-                                width: `${products.length > 0 ? (stat.count / products.length) * 100 : 0}%`,
-                                animationDelay: `${Math.random() * 0.5}s`
-                              }}
-                            ></div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="mt-4 pt-4 border-t border-gray-300 dark:border-gray-700">
-                      <p className={`text-xs ${isDarkMode ? 'text-amber-300' : 'text-amber-700'}`}>
-                        <span className="font-semibold">Note:</span> Status auto-updates based on stock levels
-                      </p>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs sm:text-sm font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+                        {stat.count}
+                      </span>
+                      <span className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-600'}`}>
+                        ({percentage.toFixed(0)}%)
+                      </span>
                     </div>
                   </div>
+                 {/* PROPORTIONAL BAR WITH FULL COLOR */}
+<div className="relative">
+  <div 
+    className={`w-full h-2 sm:h-3 rounded-full overflow-hidden transition-all duration-500 group-hover:scale-105 ${
+      isDarkMode ? 'bg-gray-800' : 'bg-gray-200'
+    }`}
+  >
+    <div 
+      className={`h-full rounded-full transition-all duration-700 ease-out ${
+        stat.count > 0 ? 'shadow-lg' : ''
+      }`}
+      style={{ 
+        width: `${percentage}%`,
+        animationDelay: `${index * 0.2}s`,
+        // SOLID COLOR BASED ON STATUS
+        background: stat.label === 'In Stock' 
+          ? (isDarkMode ? '#10b981' : '#34d399') // Green
+          : stat.label === 'Low Stock' 
+          ? (isDarkMode ? '#f59e0b' : '#fbbf24') // Amber/Yellow
+          : (isDarkMode ? '#ef4444' : '#f87171') // Red
+      }}
+    >
+      {/* Shine effect for animated look */}
+      <div 
+        className={`absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent ${
+          stat.count > 0 ? 'animate-pulse' : ''
+        }`}
+        style={{
+          animationDuration: '2s'
+        }}
+      ></div>
+    </div>
+  </div>
+  
+  {/* Optional: Show percentage label on hover */}
+  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+    <span 
+      className={`text-xs font-bold px-2 py-1 rounded-full backdrop-blur-sm ${
+        stat.label === 'In Stock' 
+          ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30' 
+          : stat.label === 'Low Stock' 
+          ? 'bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30'
+          : 'bg-red-500/20 text-red-700 dark:text-red-300 border border-red-500/30'
+      }`}
+    >
+      {percentage.toFixed(1)}%
+    </span>
+  </div>
+</div>
+                </div>
+              );
+            })}
+          </div>
+          
+          {/* Summary with visual indicator */}
+          <div className="mt-4 pt-4 border-t border-gray-300 dark:border-gray-700">
+            <div className="flex items-center justify-between mb-2">
+              <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Total Products</span>
+              <div className="flex items-center gap-2">
+                <span className={`text-sm font-bold ${isDarkMode ? 'text-amber-300' : 'text-amber-600'}`}>
+                  {products.length}
+                </span>
+                <Sparkles className={`h-3 w-3 ${animateStats ? 'animate-spin' : ''} ${isDarkMode ? 'text-amber-400' : 'text-amber-500'}`} />
+              </div>
+            </div>
+            
+            {/* Visual percentage breakdown */}
+            <div className="mt-3">
+              <div className="flex items-center justify-between mb-1">
+                <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Distribution</span>
+                <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>100%</span>
+              </div>
+              <div className="w-full h-2 rounded-full overflow-hidden flex">
+                {statusStats.map((stat) => {
+                  const percentage = products.length > 0 
+                    ? (stat.count / products.length) * 100
+                    : 0;
+                  
+                  return (
+                    <div 
+                      key={stat.label}
+                      className={`h-full transition-all duration-500 ${
+                        stat.label === 'In Stock' ? (isDarkMode ? 'bg-emerald-600' : 'bg-emerald-500') :
+                        stat.label === 'Low Stock' ? (isDarkMode ? 'bg-amber-600' : 'bg-amber-500') :
+                        (isDarkMode ? 'bg-red-600' : 'bg-red-500')
+                      }`}
+                      style={{ width: `${percentage}%` }}
+                      title={`${stat.label}: ${percentage.toFixed(1)}%`}
+                    ></div>
+                  );
+                })}
+              </div>
+              
+              {/* Color legend with percentages */}
+              <div className="grid grid-cols-3 gap-1 mt-2">
+                {statusStats.map((stat) => {
+                  const percentage = products.length > 0 
+                    ? (stat.count / products.length) * 100
+                    : 0;
+                  
+                  return (
+                    <div key={stat.label} className="flex items-center justify-center gap-1">
+                      <div className={`w-2 h-2 rounded-full ${
+                        stat.label === 'In Stock' ? 'bg-emerald-500' :
+                        stat.label === 'Low Stock' ? 'bg-amber-500' : 'bg-red-500'
+                      }`}></div>
+                      <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                        {percentage.toFixed(0)}%
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            
+            {/* Explanation tooltip */}
+            <div className="mt-3 pt-3 border-t border-gray-300 dark:border-gray-700">
+              <div className="flex items-center gap-1 text-xs">
+                <span className={isDarkMode ? 'text-amber-400' : 'text-amber-600'}>📊</span>
+                <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
+                  Bar width shows percentage of total products
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {/* Quick Stats */}
+    <div className={`${isDarkMode ? 'card-border-dark' : 'card-border'}`}>
+      <div className={`${isDarkMode ? 'card-inner-dark' : 'card-inner'}`}>
+        <div className="p-3 sm:p-4 lg:p-5">
+          <div className="flex items-center justify-between mb-3 sm:mb-4 lg:mb-6">
+            <div>
+              <h3 className={`text-base sm:text-lg font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Product Insights</h3>
+              <p className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Key metrics</p>
+            </div>
+            <div className={`p-1.5 sm:p-2 rounded-lg ${isDarkMode ? 'bg-emerald-900/30' : 'bg-emerald-50'}`}>
+              <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-600 dark:text-emerald-400" />
+            </div>
+          </div>
+          
+          <div className="space-y-2 sm:space-y-3 lg:space-y-4">
+            <div className={`flex justify-between items-center p-2 sm:p-3 rounded-lg transition-colors duration-300 ${isDarkMode ? 'bg-blue-900/20 hover:bg-blue-900/30' : 'bg-blue-50/30 hover:bg-blue-50/50'}`}>
+              <span className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Total Products</span>
+              <span className={`font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'} text-sm sm:text-base`}>{products.length}</span>
+            </div>
+            <div className={`flex justify-between items-center p-2 sm:p-3 rounded-lg transition-colors duration-300 ${isDarkMode ? 'bg-emerald-900/20 hover:bg-emerald-900/30' : 'bg-emerald-50/30 hover:bg-emerald-50/50'}`}>
+              <span className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Avg. Price</span>
+              <span className={`font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'} text-sm sm:text-base`}>
+                {products.length > 0 
+                  ? `$${products.reduce((sum, p) => sum + (typeof p.price === 'number' ? p.price : parseFloat(p.price) || 0), 0) / products.length}`
+                  : '$0.00'
+                }
+              </span>
+            </div>
+            <div className={`flex justify-between items-center p-2 sm:p-3 rounded-lg transition-colors duration-300 ${isDarkMode ? 'bg-purple-900/20 hover:bg-purple-900/30' : 'bg-purple-50/30 hover:bg-purple-50/50'}`}>
+              <span className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Total Sales</span>
+              <span className={`font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'} text-sm sm:text-base`}>
+                {products.reduce((sum, p) => sum + (p.sales || 0), 0)}
+              </span>
+            </div>
+          </div>
+          
+          {/* Stats change indicators */}
+          <div className="mt-4 pt-4 border-t border-gray-300 dark:border-gray-700">
+            <div className="flex items-center justify-between">
+              <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Status Update</span>
+              <span className={`text-xs px-2 py-1 rounded-full ${
+                animateStats 
+                  ? 'bg-amber-500/20 text-amber-700 dark:text-amber-300 animate-pulse'
+                  : 'bg-green-500/20 text-green-700 dark:text-green-300'
+              }`}>
+                {animateStats ? 'Updating...' : 'Live'}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {/* Quick Actions */}
+    <div className={`${isDarkMode ? 'card-border-dark' : 'card-border'}`}>
+      <div className={`${isDarkMode ? 'card-inner-dark' : 'card-inner'}`}>
+        <div className="p-3 sm:p-4 lg:p-5">
+          <h3 className={`text-base sm:text-lg font-bold mb-4 ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Quick Actions</h3>
+          
+          <div className="space-y-2 sm:space-y-3">
+            <button 
+              onClick={handleAddButtonClick}
+              className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 text-sm`}
+              aria-label="Add new product"
+            >
+              <Plus className="h-4 w-4" />
+              Add New Product
+            </button>
+            <button 
+              onClick={handleExport}
+              className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 font-medium rounded-lg border transition-all duration-300 hover:scale-105 text-sm ${isDarkMode ? 'bg-gray-800 hover:bg-blue-900/30 text-gray-300 hover:text-gray-100 border-gray-700' : 'bg-gray-50 hover:bg-blue-50 text-gray-700 hover:text-gray-900 border-gray-300'}`}
+              aria-label="Export products"
+            >
+              <Download className="h-4 w-4" />
+              Export Products
+            </button>
+            <button 
+              onClick={handleClearAll}
+              className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 font-medium rounded-lg border transition-all duration-300 hover:scale-105 text-sm ${isDarkMode ? 'bg-red-900/30 hover:bg-red-900/40 text-red-300 hover:text-red-200 border-red-800' : 'bg-red-50 hover:bg-red-100 text-red-700 hover:text-red-900 border-red-200'}`}
+              aria-label="Clear all products"
+            >
+              <Trash2 className="h-4 w-4" />
+              Clear All Products
+            </button>
+          </div>
+          
+          {/* Action stats */}
+          <div className="mt-4 pt-4 border-t border-gray-300 dark:border-gray-700">
+            <div className="grid grid-cols-2 gap-2">
+              <div className="text-center">
+                <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Filtered</div>
+                <div className={`font-bold ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>
+                  {filteredProducts.length}
                 </div>
               </div>
-
-              {/* Quick Stats */}
-              <div className={`${isDarkMode ? 'card-border-dark' : 'card-border'}`}>
-                <div className={`${isDarkMode ? 'card-inner-dark' : 'card-inner'}`}>
-                  <div className="p-3 sm:p-4 lg:p-5">
-                    <div className="flex items-center justify-between mb-3 sm:mb-4 lg:mb-6">
-                      <div>
-                        <h3 className={`text-base sm:text-lg font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Product Insights</h3>
-                        <p className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Key metrics</p>
-                      </div>
-                      <div className={`p-1.5 sm:p-2 rounded-lg ${isDarkMode ? 'bg-emerald-900/30' : 'bg-emerald-50'}`}>
-                        <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-600 dark:text-emerald-400" />
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2 sm:space-y-3 lg:space-y-4">
-                      <div className={`flex justify-between items-center p-2 sm:p-3 rounded-lg transition-colors duration-300 ${isDarkMode ? 'bg-blue-900/20 hover:bg-blue-900/30' : 'bg-blue-50/30 hover:bg-blue-50/50'}`}>
-                        <span className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Total Products</span>
-                        <span className={`font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'} text-sm sm:text-base`}>{products.length}</span>
-                      </div>
-                      <div className={`flex justify-between items-center p-2 sm:p-3 rounded-lg transition-colors duration-300 ${isDarkMode ? 'bg-emerald-900/20 hover:bg-emerald-900/30' : 'bg-emerald-50/30 hover:bg-emerald-50/50'}`}>
-                        <span className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Avg. Price</span>
-                        <span className={`font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'} text-sm sm:text-base`}>{calculateAveragePrice()}</span>
-                      </div>
-                      <div className={`flex justify-between items-center p-2 sm:p-3 rounded-lg transition-colors duration-300 ${isDarkMode ? 'bg-purple-900/20 hover:bg-purple-900/30' : 'bg-purple-50/30 hover:bg-purple-50/50'}`}>
-                        <span className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Total Sales</span>
-                        <span className={`font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'} text-sm sm:text-base`}>{calculateTotalSales()}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Quick Actions */}
-              <div className="card-border md:col-span-2 lg:col-span-1">
-                <div className="card-inner">
-                  <div className="p-3 sm:p-4 lg:p-5">
-                    <h3 className={`text-base sm:text-lg font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Quick Actions</h3>
-                    
-                    <div className="space-y-2 sm:space-y-3">
-                      <button 
-                        onClick={handleAddButtonClick}
-                        className={`w-full flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 ${isDarkMode ? 'gradient-button-dark' : 'gradient-button'} text-white font-bold rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl hover-lift text-xs sm:text-sm`}
-                      >
-                        <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
-                        Add New Product
-                      </button>
-                      <button 
-                        onClick={handleExport}
-                        className={`w-full flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 font-medium rounded-lg border transition-all duration-300 hover-lift text-xs sm:text-sm ${isDarkMode ? 'bg-gray-800 hover:bg-blue-900/30 text-gray-300 hover:text-gray-100 border-gray-700' : 'bg-gray-50 hover:bg-blue-50 text-gray-700 hover:text-gray-900 border-gray-300'}`}
-                      >
-                        <Download className="h-3 w-3 sm:h-4 sm:w-4" />
-                        Export Products
-                      </button>
-                      <button 
-                        onClick={handleClearAll}
-                        className={`w-full flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 font-medium rounded-lg border transition-all duration-300 hover-lift text-xs sm:text-sm ${isDarkMode ? 'bg-red-900/30 hover:bg-red-900/40 text-red-300 hover:text-red-200 border-red-800' : 'bg-red-50 hover:bg-red-100 text-red-700 hover:text-red-900 border-red-200'}`}
-                      >
-                        <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
-                        Clear All Products
-                      </button>
-                    </div>
-                  </div>
+              <div className="text-center">
+                <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Current Page</div>
+                <div className={`font-bold ${isDarkMode ? 'text-amber-300' : 'text-amber-600'}`}>
+                  {currentPage}/{totalPages}
                 </div>
               </div>
             </div>
-          )}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
         </div>
       </div>
 
