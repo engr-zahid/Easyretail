@@ -61,6 +61,8 @@ app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
 =======
+=======
+>>>>>>> d38f0aa ( Implement product fetch and add features with database connectivity and UI updates)
 require('dotenv').config();
 
 const app = require('./src/app');
@@ -108,5 +110,9 @@ const startServer = async () => {
   }
 };
 
+<<<<<<< HEAD
 startServer();
 >>>>>>> a3859f8 (Implemented product fetch and add features with database connectivity and UI updates)
+=======
+startServer();
+>>>>>>> d38f0aa ( Implement product fetch and add features with database connectivity and UI updates)
