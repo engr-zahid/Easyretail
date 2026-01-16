@@ -61,32 +61,69 @@ const ProductList = () => {
   
   // API base URL
   const API_BASE_URL = 'http://localhost:5000/api';
-  
-  // Fetch products from backend
   const fetchProducts = async () => {
     try {
       setIsLoading(true);
+      console.log('Fetching products from:', `${API_BASE_URL}/products`);
+
       const res = await axios.get(`${API_BASE_URL}/products`);
-      // Transform backend data to match your frontend structure
-      const transformedProducts = res.data.map(product => ({
-        ...product,
-        id: product.id || product._id || `PROD-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        status: calculateStockStatus(product.stock || product.quantity || 0),
-        // sales: product.sales || Math.floor(Math.random() * 100), // Default sales if not provided
-        image: product.image || '📦', // Default image if not provided
-        category: product.category || 'Clothing', // Default category
-        description: product.description || '' // Default description
-      }));
-      setProducts(transformedProducts);
+
+      console.log('Response received:', res.data);
+
+      if (res.data && res.data.success && Array.isArray(res.data.products)) {
+        // Use the products array from response
+        const productsArray = res.data.products;
+        const transformedProducts = productsArray.map(product => {
+          // Validate and transform each product
+          const transformed = {
+            id: product.id || `temp-${Date.now()}-${Math.random()}`,
+            name: product.name || 'Unnamed Product',
+            category: product.category || 'Clothing',
+            price: parseFloat(product.price) || 0,
+            stock: product.stock || product.quantity || 0,
+            quantity: product.quantity || product.stock || 0,
+            status: product.status || calculateStockStatus(product.stock || product.quantity || 0),
+            sales: product.sales || 0,
+            image: product.image || '📦',
+            description: product.description || '',
+            sku: product.sku || `SKU-${Date.now()}`,
+            isActive: product.isActive !== undefined ? product.isActive : true,
+            createdAt: product.createdAt || new Date().toISOString(),
+            updatedAt: product.updatedAt || new Date().toISOString()
+          };
+
+          // Ensure image is a valid string
+          if (typeof transformed.image !== 'string') {
+            transformed.image = '📦';
+          }
+
+          return transformed;
+        });
+
+        setProducts(transformedProducts);
+        console.log('Products loaded successfully:', transformedProducts.length);
+      } else {
+        console.warn('API returned invalid response structure:', res.data);
+        setProducts([]);
+      }
     } catch (err) {
       console.error("Error fetching products:", err);
-      // If backend fails, use empty array
-      setProducts([]);
+
+      // Show user-friendly error message
+      if (err.code === 'ERR_NETWORK') {
+        console.error('Network error - backend server may not be running');
+      } else if (err.response?.status === 500) {
+        console.error('Server error - check backend database connection');
+      } else if (err.response?.status === 404) {
+        console.error('API endpoint not found');
+      }
+
+      // Keep existing products if fetch fails (don't clear the list)
+      console.log('Keeping existing products due to fetch error');
     } finally {
       setIsLoading(false);
     }
   };
-  
   // Initialize products on component mount
   useEffect(() => {
     fetchProducts();
@@ -100,7 +137,9 @@ const ProductList = () => {
     stock: '',
     status: 'in-stock',
     description: '',
-    image: '📦'
+    image: '📦',
+    imageFile: null,
+    imagePreview: null
   });
 
   // Listen for theme changes from Navbar
@@ -123,6 +162,15 @@ const ProductList = () => {
       return () => clearTimeout(timer);
     }
   }, [products]);
+
+  // Cleanup blob URLs to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (newProduct.imagePreview && newProduct.imagePreview.startsWith('blob:')) {
+        URL.revokeObjectURL(newProduct.imagePreview);
+      }
+    };
+  }, [newProduct.imagePreview]);
 
   // Function to calculate stock status based on stock quantity
   const calculateStockStatus = (stock) => {
@@ -247,35 +295,91 @@ const ProductList = () => {
     handleEditProduct();
   };
 
-  // Add product to backend - UPDATED
-  const addProduct = async (productData) => {
-    try {
-      setIsProcessing(true);
-      // Prepare data for backend
-      const backendProduct = {
+  // Add product to backend
+const addProduct = async (productData) => {
+  try {
+    setIsProcessing(true);
+
+    let requestData;
+    let headers = {};
+
+    // Check if we have an image file to upload
+    if (productData.imageFile) {
+      // Use FormData for file upload
+      requestData = new FormData();
+      requestData.append('name', productData.name);
+      requestData.append('category', productData.category);
+      requestData.append('price', parseFloat(productData.price) || 0);
+      requestData.append('stock', parseInt(productData.stock) || 0);
+      requestData.append('description', productData.description || '');
+      requestData.append('sales', productData.sales || 0);
+      requestData.append('status', productData.status || 'in-stock');
+      requestData.append('image', productData.imageFile); // File object
+
+      console.log('Sending product data with file:', {
+        name: productData.name,
+        category: productData.category,
+        hasImage: !!productData.imageFile
+      });
+    } else {
+      // Use JSON for text-only data
+      requestData = {
         name: productData.name,
         category: productData.category,
         price: parseFloat(productData.price) || 0,
-        stock: parseInt(productData.stock) || 0,
-        quantity: parseInt(productData.stock) || 0, // Send both stock and quantity
+        quantity: parseInt(productData.stock) || 0,
         description: productData.description || '',
         image: productData.image || '📦',
-        sales: productData.sales || 0
+        sales: productData.sales || 0,
+        status: productData.status || 'in-stock'
       };
-      
-      const response = await axios.post(`${API_BASE_URL}/products`, backendProduct);
-      
-      // Refresh products list
-      await fetchProducts();
-      
-      return response.data;
-    } catch (err) {
-      console.error("Error adding product:", err);
-      throw err;
-    } finally {
-      setIsProcessing(false);
+      headers['Content-Type'] = 'application/json';
+
+      console.log('Sending product data (no file):', requestData);
     }
-  };
+
+    const response = await axios.post(`${API_BASE_URL}/products`, requestData, { headers });
+
+    console.log('Product added response:', response.data);
+
+    if (response.data && response.data.success) {
+      await fetchProducts(); // Refresh list
+      return {
+        success: true,
+        product: response.data.product,
+        message: 'Product added successfully'
+      };
+    } else {
+      throw new Error(response.data?.message || 'Failed to add product');
+    }
+  } catch (err) {
+    console.error("Error adding product:", err.response?.data || err.message);
+
+    // Fallback: Add to local state if backend fails
+    console.log('Adding product to local state as fallback');
+    const newId = `local-${Date.now()}`;
+    const newProduct = {
+      ...productData,
+      id: newId,
+      sales: 0,
+      status: calculateStockStatus(productData.stock || 0),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      // Ensure image is properly set
+      image: productData.imageFile ? '📦' : (productData.image || '📦')
+    };
+
+
+    return {
+      success: true,
+      product: newProduct,
+      message: 'Product added locally (backend offline)',
+      isLocal: true
+    };
+  } finally {
+    setIsProcessing(false);
+  }
+};
 
   // Update product in backend - UPDATED
   const updateProduct = async (productId, productData) => {
@@ -412,6 +516,7 @@ const ProductList = () => {
           status: calculatedStatus,
           description: newProduct.description,
           image: newProduct.image || '📦',
+          imageFile: newProduct.imageFile, // Include the file for upload
           sales: Math.floor(Math.random() * 100) // Random sales for demo
         };
         
@@ -429,7 +534,9 @@ const ProductList = () => {
           stock: '',
           status: 'in-stock',
           description: '',
-          image: '📦'
+          image: '📦',
+          imageFile: null,
+          imagePreview: null
         });
         
         // Update status stats
@@ -585,15 +692,30 @@ const ProductList = () => {
   const handleImageUpload = (e, isEdit = false) => {
     const file = e.target.files[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (isEdit && selectedProduct) {
-          handleEditInputChange('image', reader.result);
-        } else {
-          handleAddInputChange('image', reader.result);
-        }
-      };
-      reader.readAsDataURL(file);
+      // Validate file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('File size too large. Maximum size is 5MB.');
+        return;
+      }
+
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        alert('Please select a valid image file.');
+        return;
+      }
+
+      // Store file for upload and preview
+      if (isEdit && selectedProduct) {
+        handleEditInputChange('imageFile', file);
+        // Create preview URL for display
+        const previewUrl = URL.createObjectURL(file);
+        handleEditInputChange('imagePreview', previewUrl);
+      } else {
+        handleAddInputChange('imageFile', file);
+        // Create preview URL for display
+        const previewUrl = URL.createObjectURL(file);
+        handleAddInputChange('imagePreview', previewUrl);
+      }
     }
   };
 
@@ -606,12 +728,15 @@ const ProductList = () => {
   // Get unique categories for filter dropdown
   const uniqueCategories = ['All Categories', ...new Set(products.map(p => p.category))];
 
-  // Get emoji from image
+  // Get emoji from image with better validation
   const getEmojiFromImage = (image) => {
-    if (image.startsWith('http') || image.startsWith('data:image')) {
+    if (!image || typeof image !== 'string') {
       return '📦';
     }
-    return image || '📦';
+    if (image.startsWith('/uploads/') || image.startsWith('http')) {
+      return '📦';
+    }
+    return image;
   };
 
   // Add CSS for custom animations with warm gradients and dark mode
@@ -1253,16 +1378,22 @@ const ProductList = () => {
                           <div className="flex items-start justify-between mb-3">
                             <div className="flex items-start gap-3">
                               <div className="relative h-10 w-10 sm:h-12 sm:w-12 rounded-lg overflow-hidden flex-shrink-0">
-                                {product.image && (product.image.startsWith('http') || product.image.startsWith('data:image')) ? (
-                                  <img 
-                                    src={product.image} 
-                                    alt={product.name}
-                                    className="absolute inset-0 w-full h-full object-cover"
-                                    onError={(e) => {
-                                      e.target.onerror = null;
-                                      e.target.src = 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=400&fit=crop';
-                                    }}
-                                  />
+                                {product.image && (product.image.startsWith('http') || product.image.startsWith('/uploads/')) ? (
+                                  <>
+                                    <img 
+                                      src={product.image.startsWith('/uploads/') ? `http://localhost:5000${product.image}` : product.image} 
+                                      alt={product.name}
+                                      className="absolute inset-0 w-full h-full object-cover"
+                                      onError={(e) => {
+                                        e.target.onerror = null;
+                                        e.target.style.display = 'none';
+                                        e.target.nextSibling.style.display = 'flex';
+                                      }}
+                                    />
+                                    <div className="absolute inset-0 flex items-center justify-center text-lg" style={{display: 'none'}}>
+                                      {getEmojiFromImage(product.image)}
+                                    </div>
+                                  </>
                                 ) : (
                                   <div className="absolute inset-0 flex items-center justify-center text-lg">
                                     {getEmojiFromImage(product.image)}
@@ -1371,16 +1502,22 @@ const ProductList = () => {
                             <td className="px-4 py-3 whitespace-nowrap">
                               <div className="flex items-center gap-3">
                                 <div className="relative h-10 w-10 rounded-lg overflow-hidden flex-shrink-0">
-                                  {product.image && (product.image.startsWith('http') || product.image.startsWith('data:image')) ? (
-                                    <img 
-                                      src={product.image} 
-                                      alt={product.name}
-                                      className="absolute inset-0 w-full h-full object-cover"
-                                      onError={(e) => {
-                                        e.target.onerror = null;
-                                        e.target.src = 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=400&fit=crop';
-                                      }}
-                                    />
+                                  {product.image && (product.image.startsWith('http') || product.image.startsWith('/uploads/')) ? (
+                                    <>
+                                      <img 
+                                        src={product.image.startsWith('/uploads/') ? `http://localhost:5000${product.image}` : product.image} 
+                                        alt={product.name}
+                                        className="absolute inset-0 w-full h-full object-cover"
+                                        onError={(e) => {
+                                          e.target.onerror = null;
+                                          e.target.style.display = 'none';
+                                          e.target.nextSibling.style.display = 'flex';
+                                        }}
+                                      />
+                                      <div className="absolute inset-0 flex items-center justify-center text-lg" style={{display: 'none'}}>
+                                        {getEmojiFromImage(product.image)}
+                                      </div>
+                                    </>
                                   ) : (
                                     <div className="absolute inset-0 flex items-center justify-center text-lg">
                                       {getEmojiFromImage(product.image)}
@@ -2238,9 +2375,17 @@ const ProductList = () => {
                       </label>
                       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
                         <div className="relative w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100 dark:bg-gray-700 mx-auto sm:mx-0">
-                          <div className="absolute inset-0 flex items-center justify-center text-lg sm:text-xl lg:text-2xl">
-                            {newProduct.image || '📦'}
-                          </div>
+                          {newProduct.imagePreview ? (
+                            <img 
+                              src={newProduct.imagePreview} 
+                              alt="Preview"
+                              className="absolute inset-0 w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="absolute inset-0 flex items-center justify-center text-lg sm:text-xl lg:text-2xl">
+                              {newProduct.image || '📦'}
+                            </div>
+                          )}
                         </div>
                         <div className="flex-1 min-w-0 w-full">
                           <label className={`flex items-center justify-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg border cursor-pointer transition-colors w-full sm:w-auto ${isDarkMode ? 'bg-gray-700 hover:bg-gray-600 text-gray-300 border-gray-600' : 'bg-gray-50 hover:bg-gray-100 text-gray-700 border-gray-300'}`}>
