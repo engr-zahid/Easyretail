@@ -4,6 +4,8 @@ const path = require('path');
 require('dotenv').config();
 
 const productRoutes = require('./routes/productRoute');
+const customerRoutes = require('./routes/customerRoute');
+const supplierRoutes = require('./routes/supplierRoute');
 
 const app = express();
 
@@ -22,7 +24,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Serve static files from uploads directory
-app.use('/uploads', express.static('/home/zakir-ahmad/Downloads/Easyretail-develop/backend/uploads'));
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Log all requests
 app.use((req, res, next) => {
@@ -32,6 +34,13 @@ app.use((req, res, next) => {
 
 // Routes
 app.use('/api', productRoutes);
+console.log('Product routes loaded');
+
+app.use('/api/customers', customerRoutes);
+console.log('Customer routes loaded');
+
+app.use('/api/suppliers', supplierRoutes);
+console.log('Supplier routes loaded');
 
 // Health check route
 app.get('/health', (req, res) => {

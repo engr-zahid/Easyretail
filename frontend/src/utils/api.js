@@ -78,12 +78,35 @@ const orderAPI = {
 
 // Customers API
 const customerAPI = {
-  getAll: (params) => api.get('/customers', { params }),
+  getAll: () => api.get('/customers'),
   getById: (id) => api.get(`/customers/${id}`),
-  create: (customerData) => api.post('/customers', customerData),
-  update: (id, customerData) => api.put(`/customers/${id}`, customerData),
+  create: (data) => api.post('/customers', data),
+  update: (id, data) => api.put(`/customers/${id}`, data),
   delete: (id) => api.delete(`/customers/${id}`),
 };
+
+// Suppliers API
+const supplierAPI = {
+  getAll: () => api.get('/suppliers'),
+  getById: (id) => api.get(`/suppliers/${id}`),
+  create: (data) => api.post('/suppliers', data),
+  update: (id, data) => api.put(`/suppliers/${id}`, data),
+  delete: (id) => api.delete(`/suppliers/${id}`),
+};
+
+// Individual exports for backward compatibility
+export const getCustomers = () => api.get('/customers');
+export const getCustomer = (id) => api.get(`/customers/${id}`);
+export const createCustomer = (data) => api.post('/customers', data);
+export const updateCustomer = (id, data) => api.put(`/customers/${id}`, data);
+export const deleteCustomer = (id) => api.delete(`/customers/${id}`);
+
+export const getSuppliers = () => api.get('/suppliers');
+export const getSupplier = (id) => api.get(`/suppliers/${id}`);
+export const createSupplier = (data) => api.post('/suppliers', data);
+export const updateSupplier = (id, data) => api.put(`/suppliers/${id}`, data);
+export const deleteSupplier = (id) => api.delete(`/suppliers/${id}`);
+
 
 // Users API
 const userAPI = {
@@ -117,6 +140,7 @@ export {
   categoryAPI,
   orderAPI,
   customerAPI,
+  supplierAPI,
   userAPI,
   dashboardAPI,
   settingsAPI

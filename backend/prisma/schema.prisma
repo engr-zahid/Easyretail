@@ -29,3 +29,39 @@ model Product {
 
   @@map("products")
 }
+
+model Customer {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  phone     String?
+  address   String?
+  status    String?  @default("active")
+  notes     String?
+  avatar    String?
+  totalOrders Int?   @default(0)
+  totalSpent String? @default("0.00")
+  joinedDate DateTime? @default(now())
+  lastActive DateTime? @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Supplier {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  phone     String?
+  address   String?
+  company   String?
+  status    String?  @default("active")
+  notes     String?
+  avatar    String?
+  totalProducts Int? @default(0)
+  totalOrders Int?   @default(0)
+  reliability String? @default("High")
+  joinedDate DateTime? @default(now())
+  lastOrder DateTime? @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

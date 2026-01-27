@@ -1,1 +1,212 @@
-Test image content
+Easyretail/
+├── docker-compose.yml
+├── DOCKER.md
+├── Dockerfile
+├── README.DOCKER.md
+├── README.md
+├── test-image.txt
+├── backend/
+│   ├── package.json
+│   ├── prisma.config.ts
+│   ├── README.md
+│   ├── server.js
+│   ├── config/
+│   │   └── prisma.js
+│   ├── lib/
+│   │   └── prisma.ts
+│   ├── prisma/
+│   │   ├── schema.prisma
+│   │   └── migrations/
+│   │       └── migration_lock.toml
+│   │       └── 20260117082557_init/
+│   │           └── migration.sql
+│   ├── src/
+│   │   ├── app.js
+│   │   ├── controllers/
+│   │   │   └── productController.js
+│   │   ├── models/
+│   │   │   └── productModel.js
+│   │   ├── routes/
+│   │   │   └── productRoute.js
+│   │   └── services/
+│   │       └── productService.js
+│   └── uploads/
+│       └── products/
+├── Easyretail/
+│   └── backend/
+│       └── uploads/
+└── frontend/
+    ├── eslint.config.js
+    ├── index.html
+    ├── package.json
+    ├── postcss.config.js
+    ├── README.md
+    ├── tailwind.config.js
+    ├── vite.config.js
+    ├── public/
+    │   └── vite.svg
+    ├── src/
+    │   ├── App.css
+    │   ├── App.jsx
+    │   ├── index.css
+    │   ├── main.jsx
+    │   ├── assets/
+    │   │   └── react.svg
+    │   ├── components/
+    │   │   ├── AnimatedText.jsx
+    │   │   ├── common/
+    │   │   │   ├── Footer.jsx
+    │   │   │   ├── Loader.jsx
+    │   │   │   ├── Navbar.jsx
+    │   │   │   └── Sidebar.jsx
+    │   │   └── ui/
+    │   │       ├── Button.jsx
+    │   │       ├── Input.jsx
+    │   │       ├── Modal.jsx
+    │   │       └── Table.jsx
+    │   ├── context/
+    │   │   ├── AuthContext.jsx
+    │   │   ├── DarkModeContext.jsx
+    │   │   └── ProductsContext.jsx
+    │   ├── data/
+    │   │   ├── Orders.js
+    │   │   ├── Product.js
+    │   │   ├── Stats.js
+    │   │   └── Users.js
+    │   ├── hooks/
+    │   │   └── useAuth.js
+    │   ├── layouts/
+    │   │   ├── AdminLayout.jsx
+    │   │   └── AuthLayout.jsx
+    │   ├── pages/
+    │   │   ├── auth/
+    │   │   │   ├── Login.jsx
+    │   │   │   └── Signup.jsx
+    │   │   ├── categories/
+    │   │   │   └── CategorieList.jsx
+    │   │   ├── customers/
+    │   │   │   └── CustomerList.jsx
+    │   │   ├── dashboard/
+    │   │   │   ├── Dashboard.jsx
+    │   │   │   ├── DashBoardHeader.jsx
+    │   │   │   ├── InventoryAlert.jsx
+    │   │   │   ├── QuickAction.jsx
+    │   │   │   ├── RecentOrder.jsx
+    │   │   │   ├── RevenueChart.jsx
+    │   │   │   ├── SalesChart.jsx
+    │   │   │   ├── SalesOverview.jsx
+    │   │   │   ├── StatsCards.jsx
+    │   │   │   ├── StatsGrid.jsx
+    │   │   │   ├── StorePerformance.jsx
+    │   │   │   └── TopProducts.jsx
+    │   │   ├── orders/
+    │   │   │   └── OrderList.jsx
+    │   │   ├── POS/
+    │   │   │   ├── ActionBottomBar.jsx
+    │   │   │   ├── CategorySidebar.jsx
+    │   │   │   ├── OrderSidebar.jsx
+    │   │   │   ├── POSContainer.jsx
+    │   │   │   └── ProductGrid.jsx
+    │   │   ├── products/
+    │   │   │   ├── AddProduct.jsx
+    │   │   │   └── ProductList.jsx
+    │   │   ├── profile/
+    │   │   │   └── Profile,jsx
+    │   │   ├── settings/
+    │   │   │   └── Settings.jsx
+    │   │   └── users/
+    │   │       └── UserList.jsx
+    │   ├── routes/
+    │   │   ├── AppRoutes.jsx
+    │   │   └── ProtectedRoute.jsx
+    │   └── utils/
+    │       ├── api.js
+    │       └── formateDate.js
+    ├── package-lock.json
+    ├── postcss.config.js
+    ├── public/
+    │   └── vite.svg
+    ├── README.md
+    ├── src/
+    │   ├── App.css
+    │   ├── App.jsx
+    │   ├── assets/
+    │   │   └── react.svg
+    │   ├── components/
+    │   │   ├── AnimatedText.jsx
+    │   │   ├── common/
+    │   │   │   ├── Footer.jsx
+    │   │   │   ├── Loader.jsx
+    │   │   │   ├── Navbar.jsx
+    │   │   │   └── Sidebar.jsx
+    │   │   └── ui/
+    │   │       ├── Button.jsx
+    │   │       ├── Input.jsx
+    │   │       ├── Modal.jsx
+    │   │       └── Table.jsx
+    │   ├── context/
+    │   │   ├── AuthContext.jsx
+    │   │   ├── DarkModeContext.jsx
+    │   │   └── ProductsContext.jsx
+    │   ├── data/
+    │   │   ├── Orders.js
+    │   │   ├── Product.js
+    │   │   ├── Stats.js
+    │   │   └── Users.js
+    │   ├── hooks/
+    │   │   └── useAuth.js
+    │   ├── index.css
+    │   ├── layouts/
+    │   │   ├── AdminLayout.jsx
+    │   │   └── AuthLayout.jsx
+    │   ├── main.jsx
+    │   ├── pages/
+    │   │   ├── auth/
+    │   │   │   ├── Login.jsx
+    │   │   │   └── Signup.jsx
+    │   │   ├── categories/
+    │   │   │   └── CategorieList.jsx
+    │   │   ├── customers/
+    │   │   │   └── CustomerList.jsx
+    │   │   ├── dashboard/
+    │   │   │   ├── DashBoardHeader.jsx
+    │   │   │   ├── Dashboard.jsx
+    │   │   │   ├── InventoryAlert.jsx
+    │   │   │   ├── QuickAction.jsx
+    │   │   │   ├── RecentOrder.jsx
+    │   │   │   ├── RevenueChart.jsx
+    │   │   │   ├── SalesChart.jsx
+    │   │   │   ├── SalesOverview.jsx
+    │   │   │   ├── StatsCards.jsx
+    │   │   │   ├── StatsGrid.jsx
+    │   │   │   ├── StorePerformance.jsx
+    │   │   │   └── TopProducts.jsx
+    │   │   ├── orders/
+    │   │   │   └── OrderList.jsx
+    │   │   ├── POS/
+    │   │   │   ├── ActionBottomBar.jsx
+    │   │   │   ├── CategorySidebar.jsx
+    │   │   │   ├── OrderSidebar.jsx
+    │   │   │   ├── POSContainer.jsx
+    │   │   │   └── ProductGrid.jsx
+    │   │   ├── products/
+    │   │   │   ├── AddProduct.jsx
+    │   │   │   └── ProductList.jsx
+    │   │   ├── profile/
+    │   │   │   └── Profile,jsx
+    │   │   ├── settings/
+    │   │   │   └── Settings.jsx
+    │   │   └── users/
+    │   │       └── UserList.jsx
+    │   ├── routes/
+    │   │   ├── AppRoutes.jsx
+    │   │   └── ProtectedRoute.jsx
+    │   └── utils/
+    │       ├── api.js
+    │       └── formateDate.js
+    ├── tailwind.config.js
+    └── vite.config.js
+├── package-lock.json
+├── README.DOCKER.md
+├── README.md
+└── test-image.txt

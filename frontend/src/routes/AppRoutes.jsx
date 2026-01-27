@@ -14,9 +14,18 @@
 
 // // Sales
 // import OrderList from "../pages/orders/OrderList";
+// import POSContainer from "../pages/POS/POSContainer";
 
 // // Settings
 // import Settings from "../pages/settings/Settings";
+
+// // People
+// import CustomerList from '../pages/customers/CustomerList';
+// import AddEditCustomer from '../pages/customers/AddEditCustomer';
+// import CustomerDetail from '../pages/customers/CustomerDetail';
+// import SupplierList from '../pages/suppliers/SupplierList';
+// import AddEditSupplier from '../pages/suppliers/AddEditSupplier';
+
 
 // const Page = ({ title }) => <div className="p-6 text-xl font-semibold">{title}</div>;
 
@@ -63,7 +72,7 @@
 
 //         {/* Sales */}
 //         <Route path="sales/invoices" element={<OrderList />} />
-//         <Route path="sales/pos" element={<Page title="POS" />} />
+//         <Route path="sales/POSContainer" element={<POSContainer />} />
 //         <Route path="sales/return" element={<Page title="Sales Return" />} />
 //         <Route path="sales/quotation" element={<Page title="Quotation" />} />
 
@@ -78,15 +87,18 @@
 //         <Route path="discounts" element={<Page title="Discounts" />} />
 
 //         {/* People */}
-//         <Route path="customers" element={<Page title="Customers" />} />
-//         <Route path="suppliers" element={<Page title="Suppliers" />} />
+//         <Route path="customers" element={<CustomerList />} />
+//         <Route path="customers/add" element={<AddEditCustomer />} />
+//         <Route path="customers/edit/:id" element={<AddEditCustomer />} />
+//         <Route path="suppliers" element={<SupplierList />} />
+//         <Route path="suppliers/add" element={<AddEditSupplier />} />
+//         <Route path="suppliers/edit/:id" element={<AddEditSupplier />} />
 //         <Route path="stores" element={<Page title="Store Owners" />} />
 
 //         {/* Reports */}
 //         <Route path="reports/sales" element={<Page title="Sales Report" />} />
 //         <Route path="reports/purchase" element={<Page title="Purchase Report" />} />
 //         <Route path="reports/inventory" element={<Page title="Inventory Report" />} />
-//         <Route path="reports/profit-loss" element={<Page title="Profit & Loss" />} />
 
 //         {/* Settings */}
 //         <Route path="settings/general" element={<Settings />} />
@@ -95,6 +107,8 @@
 //         <Route path="settings/currency" element={<Page title="Currency Settings" />} />
 //       </Route>
 
+      
+
 //       {/* ================= FALLBACK ================= */}
 //       <Route path="*" element={<Navigate to="/" replace />} />
 
@@ -102,7 +116,8 @@
 //   );
 // };
 
-// export default AppRoutes;
+// export default AppRoutes;        <Route path="reports/profit-loss" element={<Page title="Profit & Loss" />} />
+
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
@@ -124,6 +139,13 @@ import POSContainer from "../pages/POS/POSContainer";
 // Settings
 import Settings from "../pages/settings/Settings";
 
+// People
+import CustomerList from '../pages/customers/CustomerList';
+import AddEditCustomer from '../pages/customers/AddEditCustomer';
+import CustomerDetail from '../pages/customers/CustomerDetail';
+import SupplierList from '../pages/suppliers/SupplierList';
+import AddEditSupplier from '../pages/suppliers/AddEditSupplier';
+import SupplierDetail from '../pages/suppliers/SupplierDetail';
 
 const Page = ({ title }) => <div className="p-6 text-xl font-semibold">{title}</div>;
 
@@ -185,14 +207,23 @@ const AppRoutes = () => {
         <Route path="discounts" element={<Page title="Discounts" />} />
 
         {/* People */}
-        <Route path="customers" element={<Page title="Customers" />} />
-        <Route path="suppliers" element={<Page title="Suppliers" />} />
+        <Route path="customers" element={<CustomerList />} />
+        <Route path="customers/add" element={<AddEditCustomer />} />
+<Route path="customers/edit/:id" element={<AddEditCustomer />} />
+<Route path="customers/:id" element={<CustomerDetail />} />
+
+<Route path="suppliers" element={<SupplierList />} />
+<Route path="suppliers/add" element={<AddEditSupplier />} />
+<Route path="suppliers/edit/:id" element={<AddEditSupplier />} />
+<Route path="suppliers/:id" element={<SupplierDetail />} />
+
         <Route path="stores" element={<Page title="Store Owners" />} />
 
         {/* Reports */}
         <Route path="reports/sales" element={<Page title="Sales Report" />} />
         <Route path="reports/purchase" element={<Page title="Purchase Report" />} />
         <Route path="reports/inventory" element={<Page title="Inventory Report" />} />
+        <Route path="reports/profit-loss" element={<Page title="Profit & Loss" />} />
 
         {/* Settings */}
         <Route path="settings/general" element={<Settings />} />
@@ -208,4 +239,4 @@ const AppRoutes = () => {
   );
 };
 
-export default AppRoutes;        <Route path="reports/profit-loss" element={<Page title="Profit & Loss" />} />
+export default AppRoutes;

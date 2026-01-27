@@ -143,7 +143,7 @@ const Sidebar = ({ collapsed = false, isMobileOpen = false, onClose }) => {
       section: 'PEOPLE',
       items: [
         { icon: Users, label: 'Customers', path: '/customers' },
-        { icon: UserCog, label: 'Suppliers', path: '/suppliers' },
+        { icon: Truck, label: 'Suppliers', path: '/suppliers' },
         { icon: Home, label: 'Store Owners', path: '/stores' },
       ],
     },
