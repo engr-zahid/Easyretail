@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,55 +7,85 @@ datasource db {
 }
 
 model Product {
-  id          String   @id @default(cuid())
+  id          String     @id @default(uuid())
   name        String
   description String?
   price       Float
-  quantity    Int      // Only quantity exists now
+  quantity    Int
   category    String?
   image       String?
   status      String?
-  sales       Int      @default(0)
+  sales       Int        @default(0)
   sku         String?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  isActive    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  orderItems  OrderItem[]
 
   @@map("products")
 }
 
 model Customer {
-  id        String   @id @default(cuid())
-  name      String
-  email     String   @unique
-  phone     String?
-  address   String?
-  status    String?  @default("active")
-  notes     String?
-  avatar    String?
-  totalOrders Int?   @default(0)
-  totalSpent String? @default("0.00")
-  joinedDate DateTime? @default(now())
-  lastActive DateTime? @default(now())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String    @id @default(uuid())
+  name        String
+  email       String    @unique
+  phone       String?
+  address     String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  avatar      String?
+  joinedDate  DateTime? @default(now())
+  lastActive  DateTime? @default(now())
+  notes       String?
+  status      String?   @default("active")
+  totalOrders Int?      @default(0)
+  totalSpent  String?   @default("0.00")
+  orders      Order[]
+  
+  @@map("customers")
 }
 
 model Supplier {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   name      String
-  email     String   @unique
+  email     String?   @unique
   phone     String?
   address   String?
   company   String?
-  status    String?  @default("active")
+  status    String    @default("active")
   notes     String?
-  avatar    String?
-  totalProducts Int? @default(0)
-  totalOrders Int?   @default(0)
-  reliability String? @default("High")
-  joinedDate DateTime? @default(now())
-  lastOrder DateTime? @default(now())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  
+  // If you have products, add this relation:
+  // products Product[]
+}
+
+model Order {
+  id            String     @id @default(uuid())
+  orderNumber   String     @unique
+  customerId    String?
+  customer      Customer?  @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  totalAmount   Float
+  status        String     @default("PENDING")
+  paymentMethod String     @default("CASH")
+  notes         String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  orderItems    OrderItem[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String  @id @default(uuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity  Int
+  price     Float
+  subtotal  Float
+
+  @@map("order_items")
 }

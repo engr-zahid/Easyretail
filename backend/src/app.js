@@ -6,6 +6,8 @@ require('dotenv').config();
 const productRoutes = require('./routes/productRoute');
 const customerRoutes = require('./routes/customerRoute');
 const supplierRoutes = require('./routes/supplierRoute');
+const orderRoutes = require('./routes/orderRoute');
+
 
 const app = express();
 
@@ -41,6 +43,9 @@ console.log('Customer routes loaded');
 
 app.use('/api/suppliers', supplierRoutes);
 console.log('Supplier routes loaded');
+
+app.use('/api/orders', orderRoutes);
+console.log('Order routes loaded');
 
 // Health check route
 app.get('/health', (req, res) => {

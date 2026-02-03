@@ -104,17 +104,9 @@ const Sidebar = ({ collapsed = false, isMobileOpen = false, onClose }) => {
           label: 'Sales',
           children: [
             { label: 'Invoices', path: '/sales/invoices' },
-            { label: 'POS', path: '/pos' },
+            { label: 'POS', path: '/sales/POSContainer' },
             { label: 'Sales Return', path: '/sales/return' },
             { label: 'Quotation', path: '/sales/quotation' },
-          ],
-        },
-        {
-          icon: ShoppingCart,
-          label: 'Orders',
-          children: [
-            { label: 'All Orders', path: '/orders' },
-            { label: 'Create Order', path: '/orders/create' },
           ],
         },
       ],
@@ -133,6 +125,12 @@ const Sidebar = ({ collapsed = false, isMobileOpen = false, onClose }) => {
         },
       ],
     },
+    {
+  icon: <ShoppingCart className="w-5 h-5" />,
+  label: 'Orders',
+  path: '/orders',
+  badge: ordersCount > 0 ? ordersCount.toString() : null,
+},
     {
       section: 'PROMOTIONS',
       items: [
@@ -166,7 +164,6 @@ const Sidebar = ({ collapsed = false, isMobileOpen = false, onClose }) => {
             { label: 'Purchase Report', path: '/reports/purchase' },
             { label: 'Inventory Report', path: '/reports/inventory' },
             { label: 'Profit & Loss', path: '/reports/profit-loss' },
-            { label: 'Order Reports', path: '/reports/orders' },
           ],
         },
       ],
@@ -178,7 +175,6 @@ const Sidebar = ({ collapsed = false, isMobileOpen = false, onClose }) => {
         { icon: Settings, label: 'System Settings', path: '/settings/system' },
         { icon: Settings, label: 'Payment Settings', path: '/settings/payment' },
         { icon: Settings, label: 'Currency Settings', path: '/settings/currency' },
-        { icon: Settings, label: 'Order Settings', path: '/settings/orders' },
       ],
     },
   ];

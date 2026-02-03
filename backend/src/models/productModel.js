@@ -1,146 +1,117 @@
 const prisma = require('../../config/prisma');
 
-const Product = {
-  async create(productData) {
+const productModel = {
+  async getAllProducts() {
     try {
-      console.log('Model: Creating product with data:', productData);
-      
-      // Transform data - frontend sends 'stock', database has 'quantity'
-      const transformedData = {
-        name: productData.name,
-        description: productData.description || '',
-        price: parseFloat(productData.price) || 0,
-        quantity: parseInt(productData.stock || productData.quantity) || 0, // Use quantity
-        category: productData.category || 'Clothing',
-        image: productData.image || '📦',
-        status: productData.status || 'in-stock',
-        sales: parseInt(productData.sales) || 0,
-        sku: productData.sku || `SKU-${Date.now()}`,
-        isActive: productData.isActive !== undefined ? productData.isActive : true
-      };
-
-      console.log('Model: Transformed data for DB:', transformedData);
-
-      const product = await prisma.product.create({
-        data: transformedData
-      });
-      
-      // Add stock field for frontend compatibility
-      return {
-        ...product,
-        stock: product.quantity
-      };
-    } catch (error) {
-      console.error('Model - Create Error:', error);
-      throw error;
-    }
-  },
-
-  async findAll() {
-    try {
-      console.log('Model: Finding all products');
+      console.log('Fetching all products from database...');
       const products = await prisma.product.findMany({
         orderBy: {
           createdAt: 'desc'
         }
       });
-      
-      console.log(`Model: Found ${products.length} products`);
-      
-      // Add stock field for frontend compatibility
-      return products.map(product => ({
-        ...product,
-        stock: product.quantity
-      }));
+      console.log(`Found ${products.length} products in database`);
+      return products;
     } catch (error) {
-      console.error('Model - Find All Error:', error);
+      console.error('Error in getAllProducts model:', error);
       throw error;
     }
   },
 
-  async findById(id) {
+  async getProductById(id) {
     try {
-      console.log('Model: Finding product by ID:', id);
+      console.log(`Fetching product by ID: ${id}`);
       const product = await prisma.product.findUnique({
         where: { id }
       });
-      
-      if (product) {
-        // Add stock field for frontend compatibility
-        return {
-          ...product,
-          stock: product.quantity
-        };
-      }
-      console.log('Model: Product not found for ID:', id);
-      return null;
+      console.log('Product found:', !!product);
+      return product;
     } catch (error) {
-      console.error('Model - Find By ID Error:', error);
+      console.error('Error in getProductById model:', error);
       throw error;
     }
   },
 
-  async update(id, productData) {
+  async createProduct(productData) {
     try {
-      console.log('Model: Updating product ID:', id, 'with data:', productData);
+      console.log('Creating product in database:', productData);
       
-      // Prepare update data
-      const updateData = {};
+      const product = await prisma.product.create({
+        data: {
+          name: productData.name,
+          category: productData.category,
+          price: productData.price,
+          quantity: productData.quantity,
+          description: productData.description,
+          image: productData.image,
+          status: productData.status,
+          sales: productData.sales,
+          sku: productData.sku,
+          isActive: productData.isActive !== undefined ? productData.isActive : true
+        }
+      });
       
-      if (productData.name !== undefined) updateData.name = productData.name;
-      if (productData.description !== undefined) updateData.description = productData.description;
-      if (productData.price !== undefined) updateData.price = parseFloat(productData.price) || 0;
-      if (productData.stock !== undefined || productData.quantity !== undefined) {
-        // Frontend sends 'stock', database has 'quantity'
-        updateData.quantity = parseInt(productData.stock || productData.quantity) || 0;
-      }
-      if (productData.category !== undefined) updateData.category = productData.category;
-      if (productData.image !== undefined) updateData.image = productData.image;
-      if (productData.status !== undefined) updateData.status = productData.status;
-      if (productData.sales !== undefined) updateData.sales = parseInt(productData.sales) || 0;
-      if (productData.isActive !== undefined) updateData.isActive = productData.isActive;
+      console.log('Product created successfully:', product.id);
+      return product;
+    } catch (error) {
+      console.error('Error in createProduct model:', error);
+      throw error;
+    }
+  },
 
-      console.log('Model: Update data for DB:', updateData);
-
+  async updateProduct(id, productData) {
+    try {
+      console.log(`Updating product ${id}:`, productData);
+      
       const product = await prisma.product.update({
         where: { id },
-        data: updateData
+        data: {
+          name: productData.name,
+          category: productData.category,
+          price: productData.price,
+          quantity: productData.quantity,
+          description: productData.description,
+          image: productData.image,
+          status: productData.status
+        }
       });
       
-      // Add stock field for frontend compatibility
-      return {
-        ...product,
-        stock: product.quantity
-      };
+      console.log('Product updated successfully');
+      return product;
     } catch (error) {
-      console.error('Model - Update Error:', error);
+      console.error('Error in updateProduct model:', error);
       throw error;
     }
   },
 
-  async delete(id) {
+  async deleteProduct(id) {
     try {
-      console.log('Model: Deleting product ID:', id);
-      await prisma.product.delete({
+      console.log(`Deleting product ${id}`);
+      
+      const product = await prisma.product.delete({
         where: { id }
       });
-      return true;
+      
+      console.log('Product deleted successfully');
+      return product;
     } catch (error) {
-      console.error('Model - Delete Error:', error);
+      console.error('Error in deleteProduct model:', error);
       throw error;
     }
   },
 
-  async deleteAll() {
+  async clearAllProducts() {
     try {
-      console.log('Model: Deleting all products');
-      await prisma.product.deleteMany({});
-      return true;
+      console.log('Clearing all products...');
+      
+      const result = await prisma.product.deleteMany({});
+      
+      console.log(`Cleared ${result.count} products`);
+      return result;
     } catch (error) {
-      console.error('Model - Delete All Error:', error);
+      console.error('Error in clearAllProducts model:', error);
       throw error;
     }
   }
 };
 
-module.exports = Product;
+module.exports = productModel;

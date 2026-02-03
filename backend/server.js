@@ -1,48 +1,21 @@
+const app = require('./src/app');
 require('dotenv').config();
 
-const app = require('./src/app');
-const prisma = require('./config/prisma');
+// Only for development - Create uploads directory if it doesn't exist
+const fs = require('fs');
+const path = require('path');
+const uploadsDir = path.join(__dirname, 'uploads/products');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+  console.log(`Created uploads directory: ${uploadsDir}`);
+}
 
 const PORT = process.env.PORT || 5000;
 
-const startServer = async () => {
-  try {
-    // Test database connection
-    await prisma.$connect();
-    console.log('✅ Database connected successfully');
-
-    const server = app.listen(PORT, () => {
-      console.log(`🚀 Server running on http://localhost:${PORT}`);
-      console.log(`📊 API Endpoint: http://localhost:${PORT}/api/products`);
-      console.log(`🎯 Test Data: http://localhost:${PORT}/api/test-products`);
-      console.log(`🏥 Health Check: http://localhost:${PORT}/health`);
-    });
-
-    // Graceful shutdown
-    const gracefulShutdown = async (signal) => {
-      console.log(`\n${signal} received. Starting graceful shutdown...`);
-      
-      server.close(async () => {
-        console.log('HTTP server closed.');
-        await prisma.$disconnect();
-        console.log('Database connection closed.');
-        process.exit(0);
-      });
-
-      // Force shutdown after 10 seconds
-      setTimeout(() => {
-        console.error('Could not close connections in time, forcefully shutting down');
-        process.exit(1);
-      }, 10000);
-    };
-
-    // process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-    // process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-    
-  } catch (error) {
-    console.error('❌ Failed to start server:', error);
-    process.exit(1);
-  }
-};
-
-startServer();
+// Start server
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📡 Health check: http://localhost:${PORT}/health`);
+  console.log(`📁 API Documentation: http://localhost:${PORT}/`);
+  console.log(`📁 Uploads served from: ${path.join(__dirname, 'uploads')}`);
+});

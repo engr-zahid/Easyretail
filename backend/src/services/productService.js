@@ -1,96 +1,84 @@
-const Product = require('../models/productModel');
+const productModel = require('../models/productModel');
 
 const productService = {
-  async createProduct(productData) {
-    try {
-      console.log('Service: Creating product');
-      const product = await Product.create(productData);
-      return { success: true, product };
-    } catch (error) {
-      console.error('Service - Create Error:', error.message);
-      return { 
-        success: false, 
-        error: error.message,
-        code: error.code
-      };
-    }
-  },
-
   async getAllProducts() {
     try {
-      console.log('Service: Getting all products');
-      const products = await Product.findAll();
-      return { success: true, products };
+      return await productModel.getAllProducts();
     } catch (error) {
-      console.error('Service - Get All Error:', error.message);
-      return { 
-        success: false, 
-        error: error.message,
-        code: error.code
-      };
+      console.error('Error in productService.getAllProducts:', error);
+      throw new Error(`Error fetching products: ${error.message}`);
     }
   },
 
   async getProductById(id) {
     try {
-      console.log('Service: Getting product by ID:', id);
-      const product = await Product.findById(id);
+      const product = await productModel.getProductById(id);
       if (!product) {
-        return { success: false, error: 'Product not found' };
+        throw new Error('Product not found');
       }
-      return { success: true, product };
+      return product;
     } catch (error) {
-      console.error('Service - Get By ID Error:', error.message);
-      return { 
-        success: false, 
-        error: error.message,
-        code: error.code
-      };
+      console.error('Error in productService.getProductById:', error);
+      throw new Error(`Error fetching product: ${error.message}`);
+    }
+  },
+
+  async createProduct(productData) {
+    try {
+      console.log('productService.createProduct called with:', productData);
+      
+      // Validate required fields
+      if (!productData.name || !productData.price) {
+        throw new Error('Product name and price are required');
+      }
+
+      if (productData.price <= 0) {
+        throw new Error('Price must be greater than 0');
+      }
+
+      if (productData.quantity < 0) {
+        throw new Error('Quantity cannot be negative');
+      }
+
+      return await productModel.createProduct(productData);
+    } catch (error) {
+      console.error('Error in productService.createProduct:', error);
+      throw new Error(`Error creating product: ${error.message}`);
     }
   },
 
   async updateProduct(id, productData) {
     try {
-      console.log('Service: Updating product ID:', id);
-      const product = await Product.update(id, productData);
-      return { success: true, product };
+      const product = await productModel.getProductById(id);
+      if (!product) {
+        throw new Error('Product not found');
+      }
+      return await productModel.updateProduct(id, productData);
     } catch (error) {
-      console.error('Service - Update Error:', error.message);
-      return { 
-        success: false, 
-        error: error.message,
-        code: error.code
-      };
+      console.error('Error in productService.updateProduct:', error);
+      throw new Error(`Error updating product: ${error.message}`);
     }
   },
 
   async deleteProduct(id) {
     try {
-      console.log('Service: Deleting product ID:', id);
-      await Product.delete(id);
-      return { success: true, message: 'Product deleted successfully' };
+      const product = await productModel.getProductById(id);
+      if (!product) {
+        throw new Error('Product not found');
+      }
+      return await productModel.deleteProduct(id);
     } catch (error) {
-      console.error('Service - Delete Error:', error.message);
-      return { 
-        success: false, 
-        error: error.message,
-        code: error.code
-      };
+      console.error('Error in productService.deleteProduct:', error);
+      throw new Error(`Error deleting product: ${error.message}`);
     }
   },
 
-  async deleteAllProducts() {
+  async clearAllProducts() {
     try {
-      console.log('Service: Deleting all products');
-      await Product.deleteAll();
-      return { success: true, message: 'All products deleted successfully' };
+      return await productModel.clearAllProducts();
     } catch (error) {
-      console.error('Service - Delete All Error:', error.message);
-      return { 
-        success: false, 
-        error: error.message,
-        code: error.code
-      };
+      console.error('Error in productService.clearAllProducts:', error);
+      throw new Error(`Error clearing products: ${error.message}`);
     }
   }
 };

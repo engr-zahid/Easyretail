@@ -60,37 +60,42 @@ const CustomerList = () => {
   // API base URL
   const API_BASE_URL = 'http://localhost:5000/api';
   
-  // Fetch customers from backend
-  const fetchCustomers = async () => {
-    try {
-      setIsLoading(true);
-      const res = await axios.get(`${API_BASE_URL}/customers`);
+// Fetch customers from backend - FIXED VERSION
+const fetchCustomers = async () => {
+  try {
+    setIsLoading(true);
+    console.log('🔄 Fetching customers from:', `${API_BASE_URL}/customers`);
+    
+    const res = await axios.get(`${API_BASE_URL}/customers`);
+    console.log('📥 Raw API response:', res.data);
+    
+    // Your backend returns: { success: true, data: [...] }
+    if (res.data && res.data.success && Array.isArray(res.data.data)) {
+      const transformedCustomers = res.data.data.map(customer => ({
+        id: customer.id,
+        name: customer.name || 'Unnamed Customer',
+        email: customer.email || 'No email',
+        phone: customer.phone || 'No phone',
+        address: customer.address || 'No address',
+        status: customer.status || 'active',
+        totalOrders: customer.totalOrders || 0,
+        totalSpent: customer.totalSpent || '0.00',
+        joinedDate: customer.createdAt ? new Date(customer.createdAt).toLocaleDateString() : new Date().toLocaleDateString(),
+        lastActive: customer.updatedAt ? new Date(customer.updatedAt).toLocaleDateString() : new Date().toLocaleDateString(),
+        notes: customer.notes || '',
+        avatar: '👤'
+      }));
       
-      if (res.data && res.data.success && Array.isArray(res.data.data)) {
-        const transformedCustomers = res.data.data.map(customer => ({
-          id: customer.id,
-          name: customer.name || 'Unnamed Customer',
-          email: customer.email || 'No email',
-          phone: customer.phone || 'No phone',
-          address: customer.address || 'No address',
-          status: customer.status || 'active',
-          totalOrders: customer.totalOrders || Math.floor(Math.random() * 50),
-          totalSpent: customer.totalSpent || (Math.random() * 1000).toFixed(2),
-          joinedDate: customer.createdAt ? new Date(customer.createdAt).toLocaleDateString() : new Date().toLocaleDateString(),
-          lastActive: customer.updatedAt ? new Date(customer.updatedAt).toLocaleDateString() : new Date().toLocaleDateString(),
-          notes: customer.notes || '',
-          avatar: customer.avatar || '👤'
-        }));
-        
-        setCustomers(transformedCustomers);
-        setError('');
-      } else {
-        setCustomers([]);
-      }
-    } catch (err) {
-      console.error("Error fetching customers:", err);
-      setError('Failed to load customers. Please check if backend is running.');
-      // Demo data for testing
+      setCustomers(transformedCustomers);
+      setError('');
+      console.log(`✅ Loaded ${transformedCustomers.length} real customers from database`);
+    } else {
+      console.error('❌ Invalid response format:', res.data);
+      setCustomers([]);
+      setError('Invalid response format from server');
+      
+      // Fallback to demo data for testing
+      console.log('🔄 Falling back to demo data');
       setCustomers([
         {
           id: '1',
@@ -121,11 +126,46 @@ const CustomerList = () => {
           avatar: '👩‍💼'
         }
       ]);
-    } finally {
-      setIsLoading(false);
     }
-  };
-  
+  } catch (err) {
+    console.error("❌ Error fetching customers:", err);
+    setError('Failed to load customers. Please check if backend is running.');
+    
+    // Demo data for testing
+    setCustomers([
+      {
+        id: '1',
+        name: 'John Doe',
+        email: 'john@example.com',
+        phone: '+1234567890',
+        address: '123 Main St, City',
+        status: 'active',
+        totalOrders: 15,
+        totalSpent: '1250.50',
+        joinedDate: '2024-01-15',
+        lastActive: '2024-03-10',
+        notes: 'Regular customer',
+        avatar: '👤'
+      },
+      {
+        id: '2',
+        name: 'Jane Smith',
+        email: 'jane@example.com',
+        phone: '+1234567891',
+        address: '456 Oak Ave, Town',
+        status: 'active',
+        totalOrders: 8,
+        totalSpent: '850.75',
+        joinedDate: '2024-02-20',
+        lastActive: '2024-03-08',
+        notes: 'Prefers email communication',
+        avatar: '👩‍💼'
+      }
+    ]);
+  } finally {
+    setIsLoading(false);
+  }
+};
   // Initialize customers on component mount
   useEffect(() => {
     fetchCustomers();
@@ -222,92 +262,179 @@ const CustomerList = () => {
     }
   ];
   
-  // Handle add customer
-  const handleAddCustomer = async () => {
-    if (newCustomer.name && newCustomer.email) {
-      try {
-        setIsProcessing(true);
-        
-        const customerToAdd = {
-          ...newCustomer,
-          totalOrders: 0,
-          totalSpent: '0.00',
-          joinedDate: new Date().toISOString(),
-          lastActive: new Date().toISOString()
+// Handle add customer - FIXED VERSION (send null instead of undefined)
+const handleAddCustomer = async () => {
+  if (!newCustomer.name.trim() || !newCustomer.email.trim()) {
+    alert('Please fill in name and email');
+    return;
+  }
+
+  try {
+    setIsProcessing(true);
+    
+    // Prepare data for backend - use null instead of undefined
+    const customerData = {
+      name: newCustomer.name.trim(),
+      email: newCustomer.email.trim(),
+      phone: newCustomer.phone.trim() || null, // Use null instead of undefined
+      address: newCustomer.address.trim() || null,
+      notes: newCustomer.notes.trim() || null,
+      // DO NOT send: avatar, totalOrders, totalSpent, joinedDate, lastActive
+      // Backend will handle defaults
+    };
+    
+    console.log('📤 Sending customer data to backend:', customerData);
+    
+    // Add to backend
+    const response = await axios.post(`${API_BASE_URL}/customers`, customerData);
+    console.log('✅ Customer creation response:', response.data);
+    
+    if (response.data.success) {
+      // Get the created customer from response
+      const createdCustomer = response.data.data;
+      
+      if (createdCustomer) {
+        // Transform to match frontend format
+        const transformedCustomer = {
+          id: createdCustomer.id,
+          name: createdCustomer.name || newCustomer.name,
+          email: createdCustomer.email || newCustomer.email,
+          phone: createdCustomer.phone || newCustomer.phone || 'No phone',
+          address: createdCustomer.address || newCustomer.address || 'No address',
+          status: createdCustomer.status || 'active',
+          totalOrders: createdCustomer.totalOrders || 0,
+          totalSpent: createdCustomer.totalSpent || '0.00',
+          joinedDate: createdCustomer.createdAt ? new Date(createdCustomer.createdAt).toLocaleDateString() : new Date().toLocaleDateString(),
+          lastActive: createdCustomer.updatedAt ? new Date(createdCustomer.updatedAt).toLocaleDateString() : new Date().toLocaleDateString(),
+          notes: createdCustomer.notes || '',
+          avatar: '👤'
         };
         
-        // Add to backend
-        const response = await axios.post(`${API_BASE_URL}/customers`, customerToAdd);
-        
-        if (response.data.success) {
-          // Add to local state
-          setCustomers(prev => [...prev, {
-            ...customerToAdd,
-            id: response.data.data?.id || `CUST-${Date.now()}`
-          }]);
-          
-          // Show success animation
-          setAddSuccessAnimation(true);
-          setTimeout(() => setAddSuccessAnimation(false), 1500);
-          
-          setShowAddModal(false);
-          setNewCustomer({
-            name: '',
-            email: '',
-            phone: '',
-            address: '',
-            status: 'active',
-            notes: '',
-            avatar: '👤'
-          });
-          
-          // Update stats
-          setAnimateStats(true);
-          setTimeout(() => setAnimateStats(false), 800);
-        }
-      } catch (error) {
-        console.error("Error adding customer:", error);
-        alert('Failed to add customer. Please try again.');
-      } finally {
-        setIsProcessing(false);
+        // Add to local state
+        setCustomers(prev => [...prev, transformedCustomer]);
+      } else {
+        // Fallback if response doesn't have data
+        console.warn('⚠️ Response missing customer data, using fallback');
+        const fallbackCustomer = {
+          id: `CUST-${Date.now()}`,
+          name: newCustomer.name,
+          email: newCustomer.email,
+          phone: newCustomer.phone || 'No phone',
+          address: newCustomer.address || 'No address',
+          status: 'active',
+          totalOrders: 0,
+          totalSpent: '0.00',
+          joinedDate: new Date().toLocaleDateString(),
+          lastActive: new Date().toLocaleDateString(),
+          notes: newCustomer.notes || '',
+          avatar: '👤'
+        };
+        setCustomers(prev => [...prev, fallbackCustomer]);
       }
+      
+      // Show success animation
+      setAddSuccessAnimation(true);
+      setTimeout(() => setAddSuccessAnimation(false), 1500);
+      
+      // Reset form
+      setShowAddModal(false);
+      setNewCustomer({
+        name: '',
+        email: '',
+        phone: '',
+        address: '',
+        status: 'active',
+        notes: '',
+        avatar: '👤'
+      });
+      
+      // Update stats
+      setAnimateStats(true);
+      setTimeout(() => setAnimateStats(false), 800);
+      
+      alert('✅ Customer added successfully!');
     } else {
-      alert('Please fill in name and email');
+      alert(`❌ Failed to add customer: ${response.data.message || response.data.error || 'Unknown error'}`);
     }
-  };
+  } catch (error) {
+    console.error("❌ Error adding customer:", error);
+    console.error("❌ Error response data:", error.response?.data);
+    console.error("❌ Error response status:", error.response?.status);
+    
+    // Show detailed error message
+    if (error.response?.data?.error) {
+      alert(`❌ Failed to add customer: ${error.response.data.error}`);
+    } else if (error.response?.data?.message) {
+      alert(`❌ Failed to add customer: ${error.response.data.message}`);
+    } else if (error.message) {
+      alert(`❌ Failed to add customer: ${error.message}`);
+    } else {
+      alert('❌ Failed to add customer. Please check backend logs.');
+    }
+  } finally {
+    setIsProcessing(false);
+  }
+};
   
-  // Handle edit customer
-  const handleEditCustomer = async () => {
-    if (selectedCustomer) {
-      try {
-        setIsProcessing(true);
-        await axios.put(`${API_BASE_URL}/customers/${selectedCustomer.id}`, selectedCustomer);
-        
+ // Handle edit customer - FIXED VERSION
+const handleEditCustomer = async () => {
+  if (selectedCustomer) {
+    try {
+      setIsProcessing(true);
+      
+      // Prepare update data (only fields that can be updated)
+      const updateData = {
+        name: selectedCustomer.name,
+        email: selectedCustomer.email,
+        phone: selectedCustomer.phone || undefined,
+        address: selectedCustomer.address || undefined,
+        notes: selectedCustomer.notes || undefined,
+        status: selectedCustomer.status
+      };
+      
+      console.log('📤 Updating customer:', selectedCustomer.id, updateData);
+      
+      const response = await axios.put(`${API_BASE_URL}/customers/${selectedCustomer.id}`, updateData);
+      console.log('✅ Update response:', response.data);
+      
+      if (response.data.success) {
         // Update local state
         setCustomers(prev => prev.map(c => 
-          c.id === selectedCustomer.id ? selectedCustomer : c
+          c.id === selectedCustomer.id ? {
+            ...c,
+            ...selectedCustomer,
+            lastActive: new Date().toLocaleDateString()
+          } : c
         ));
         
         setShowEditModal(false);
         setSelectedCustomer(null);
         setAnimateStats(true);
         setTimeout(() => setAnimateStats(false), 800);
-      } catch (error) {
-        console.error("Error updating customer:", error);
-        alert('Failed to update customer. Please try again.');
-      } finally {
-        setIsProcessing(false);
-      }
-    }
-  };
-  
-  // Handle delete customer
-  const handleDeleteCustomer = async () => {
-    if (selectedCustomer) {
-      try {
-        setIsProcessing(true);
-        await axios.delete(`${API_BASE_URL}/customers/${selectedCustomer.id}`);
         
+        alert('✅ Customer updated successfully!');
+      } else {
+        alert(`❌ Failed to update customer: ${response.data.message || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error("❌ Error updating customer:", error);
+      alert(`❌ Failed to update customer: ${error.response?.data?.error || error.message || 'Unknown error'}`);
+    } finally {
+      setIsProcessing(false);
+    }
+  }
+};
+  
+  // Handle delete customer - FIXED VERSION
+const handleDeleteCustomer = async () => {
+  if (selectedCustomer) {
+    try {
+      setIsProcessing(true);
+      const response = await axios.delete(`${API_BASE_URL}/customers/${selectedCustomer.id}`);
+      
+      console.log('✅ Delete response:', response.data);
+      
+      if (response.data.success) {
         // Remove from local state
         setCustomers(prev => prev.filter(c => c.id !== selectedCustomer.id));
         
@@ -315,15 +442,19 @@ const CustomerList = () => {
         setSelectedCustomer(null);
         setAnimateStats(true);
         setTimeout(() => setAnimateStats(false), 800);
-      } catch (error) {
-        console.error("Error deleting customer:", error);
-        alert('Failed to delete customer. Please try again.');
-      } finally {
-        setIsProcessing(false);
+        
+        alert('✅ Customer deleted successfully!');
+      } else {
+        alert(`❌ Failed to delete customer: ${response.data.message || 'Unknown error'}`);
       }
+    } catch (error) {
+      console.error("❌ Error deleting customer:", error);
+      alert(`❌ Failed to delete customer: ${error.response?.data?.error || error.message || 'Unknown error'}`);
+    } finally {
+      setIsProcessing(false);
     }
-  };
-  
+  }
+};
   // Handle export
   const handleExport = () => {
     if (customers.length === 0) {

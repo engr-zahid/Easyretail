@@ -1,187 +1,171 @@
 const productService = require('../services/productService');
 
 const productController = {
+  async getAllProducts(req, res) {
+    try {
+      console.log('Fetching all products...');
+      const products = await productService.getAllProducts();
+      console.log(`Found ${products.length} products`);
+      
+      res.json({
+        success: true,
+        products: products || [],
+        count: products?.length || 0
+      });
+    } catch (error) {
+      console.error('Error in getAllProducts controller:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch products',
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+  },
+
+  async getProductById(req, res) {
+    try {
+      const product = await productService.getProductById(req.params.id);
+      if (!product) {
+        return res.status(404).json({
+          success: false,
+          message: 'Product not found'
+        });
+      }
+      res.json({
+        success: true,
+        product
+      });
+    } catch (error) {
+      console.error('Error in getProductById controller:', error);
+      res.status(500).json({
+        success: false,
+        message: error.message || 'Failed to fetch product'
+      });
+    }
+  },
+
   async createProduct(req, res) {
     try {
-      console.log('Controller: Creating product with data:', req.body);
-      const productData = { ...req.body };
-
+      console.log('Create product request received');
+      console.log('Request body:', req.body);
+      console.log('Request file:', req.file);
+      
       // Handle image upload
+      let image = '📦';
       if (req.file) {
-        // File was uploaded - store the file path
-        productData.image = `/uploads/products/${req.file.filename}`;
-        console.log('Image uploaded:', req.file.filename);
-      } else {
-        // No file uploaded - use emoji or default from body
-        productData.image = productData.image || '📦';
-        console.log('Using default/emoji image:', productData.image);
+        image = `/uploads/products/${req.file.filename}`;
+        console.log('Image uploaded:', image);
+      } else if (req.body.image && req.body.image !== '📦') {
+        image = req.body.image;
       }
 
-      const result = await productService.createProduct(productData);
+      // Prepare product data
+      const productData = {
+        name: req.body.name?.trim(),
+        category: req.body.category || 'Clothing',
+        price: parseFloat(req.body.price) || 0,
+        quantity: parseInt(req.body.quantity || req.body.stock || 0),
+        description: req.body.description?.trim() || '',
+        image: image,
+        status: req.body.status || 'in-stock',
+        sales: parseInt(req.body.sales) || 0,
+        sku: req.body.sku || `SKU-${Date.now()}`
+      };
 
-      if (result.success) {
-        res.status(201).json({
-          success: true,
-          message: 'Product created successfully',
-          product: result.product
-        });
-      } else {
-        res.status(400).json({
-          success: false,
-          message: result.error,
-          code: result.code
-        });
-      }
-    } catch (error) {
-      console.error('Controller - Create Error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Internal server error'
-      });
-    }
-  },
-
-  async getProducts(req, res) {
-    try {
-      console.log('Controller: Getting all products');
-      const result = await productService.getAllProducts();
+      console.log('Creating product with data:', productData);
       
-      if (result.success) {
-        res.status(200).json({
-          success: true,
-          count: result.products.length,
-          products: result.products
-        });
-      } else {
-        res.status(500).json({
+      // Validate required fields
+      if (!productData.name) {
+        return res.status(400).json({
           success: false,
-          message: result.error,
-          code: result.code
+          message: 'Product name is required'
         });
       }
-    } catch (error) {
-      console.error('Controller - Get Products Error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Internal server error'
-      });
-    }
-  },
 
-  async getProduct(req, res) {
-    try {
-      const { id } = req.params;
-      console.log('Controller: Getting product:', id);
-      const result = await productService.getProductById(id);
-      
-      if (result.success) {
-        res.status(200).json({
-          success: true,
-          product: result.product
-        });
-      } else {
-        res.status(404).json({
+      if (productData.price <= 0) {
+        return res.status(400).json({
           success: false,
-          message: result.error,
-          code: result.code
+          message: 'Product price must be greater than 0'
         });
       }
+
+      const product = await productService.createProduct(productData);
+      
+      res.status(201).json({
+        success: true,
+        product,
+        message: 'Product created successfully'
+      });
     } catch (error) {
-      console.error('Controller - Get Product Error:', error);
-      res.status(500).json({
+      console.error('Error in createProduct controller:', error);
+      res.status(400).json({
         success: false,
-        message: 'Internal server error'
+        message: error.message || 'Failed to create product',
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
     }
   },
 
   async updateProduct(req, res) {
     try {
-      const { id } = req.params;
-      const productData = { ...req.body };
-      console.log('Controller: Updating product:', id, 'with:', productData);
-
-      // Handle image upload for updates
+      let image = req.body.image;
       if (req.file) {
-        // File was uploaded - store the file path
-        productData.image = `/uploads/products/${req.file.filename}`;
-        console.log('Image updated:', req.file.filename);
+        image = `/uploads/products/${req.file.filename}`;
       }
-      // If no file uploaded, keep existing image or use emoji/default
 
-      const result = await productService.updateProduct(id, productData);
+      const productData = {
+        name: req.body.name?.trim(),
+        category: req.body.category,
+        price: parseFloat(req.body.price) || 0,
+        quantity: parseInt(req.body.quantity || req.body.stock || 0),
+        description: req.body.description?.trim(),
+        image: image || '📦',
+        status: req.body.status
+      };
 
-      if (result.success) {
-        res.status(200).json({
-          success: true,
-          message: 'Product updated successfully',
-          product: result.product
-        });
-      } else {
-        res.status(400).json({
-          success: false,
-          message: result.error,
-          code: result.code
-        });
-      }
+      const product = await productService.updateProduct(req.params.id, productData);
+      res.json({
+        success: true,
+        product,
+        message: 'Product updated successfully'
+      });
     } catch (error) {
-      console.error('Controller - Update Error:', error);
-      res.status(500).json({
+      console.error('Error in updateProduct controller:', error);
+      res.status(400).json({
         success: false,
-        message: 'Internal server error'
+        message: error.message || 'Failed to update product'
       });
     }
   },
 
   async deleteProduct(req, res) {
     try {
-      const { id } = req.params;
-      console.log('Controller: Deleting product:', id);
-      const result = await productService.deleteProduct(id);
-      
-      if (result.success) {
-        res.status(200).json({
-          success: true,
-          message: result.message
-        });
-      } else {
-        res.status(400).json({
-          success: false,
-          message: result.error,
-          code: result.code
-        });
-      }
+      await productService.deleteProduct(req.params.id);
+      res.json({
+        success: true,
+        message: 'Product deleted successfully'
+      });
     } catch (error) {
-      console.error('Controller - Delete Error:', error);
-      res.status(500).json({
+      console.error('Error in deleteProduct controller:', error);
+      res.status(400).json({
         success: false,
-        message: 'Internal server error'
+        message: error.message || 'Failed to delete product'
       });
     }
   },
 
-  async deleteAllProducts(req, res) {
+  async clearAllProducts(req, res) {
     try {
-      console.log('Controller: Deleting all products');
-      const result = await productService.deleteAllProducts();
-      
-      if (result.success) {
-        res.status(200).json({
-          success: true,
-          message: result.message
-        });
-      } else {
-        res.status(400).json({
-          success: false,
-          message: result.error,
-          code: result.code
-        });
-      }
+      await productService.clearAllProducts();
+      res.json({
+        success: true,
+        message: 'All products cleared successfully'
+      });
     } catch (error) {
-      console.error('Controller - Delete All Error:', error);
-      res.status(500).json({
+      console.error('Error in clearAllProducts controller:', error);
+      res.status(400).json({
         success: false,
-        message: 'Internal server error'
+        message: error.message || 'Failed to clear products'
       });
     }
   }
