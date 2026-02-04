@@ -5,6 +5,9 @@ const customerController = require('../controllers/customerController');
 // Get all customers
 router.get('/', customerController.getCustomers);
 
+// Get customer analytics
+router.get('/analytics', customerController.getCustomerAnalytics); // NEW
+
 // Get single customer
 router.get('/:id', customerController.getCustomer);
 

@@ -1,12 +1,10 @@
-
 // src/models/orderModel.js
-const prisma = require('../../config/prisma'); // Import from your config file
+const prisma = require('../../config/prisma');
 
 const orderModel = {
   async getAllOrders() {
     try {
       console.log('📋 Fetching all orders from database...');
-      
       const orders = await prisma.order.findMany({
         include: {
           customer: true,
@@ -20,10 +18,8 @@ const orderModel = {
           createdAt: 'desc'
         }
       });
-      
       console.log(`✅ Found ${orders.length} orders in database`);
       return orders;
-      
     } catch (error) {
       console.error('❌ Error in getAllOrders:', error);
       return [];
@@ -39,16 +35,35 @@ const orderModel = {
       if (!orderData.items || orderData.items.length === 0) {
         throw new Error('Order must have at least one item');
       }
-      
+
       // Calculate total
       const totalAmount = orderData.items.reduce((sum, item) => {
         return sum + (item.price * item.quantity);
       }, 0);
-      
+
       // Generate order number
       const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
-      
-      // Create order
+
+      // ============================================
+      // 1. GET PRODUCTS TO CHECK SUPPLIERS
+      // ============================================
+      const productIds = orderData.items.map(item => item.productId);
+      const products = await prisma.product.findMany({
+        where: {
+          id: {
+            in: productIds
+          }
+        },
+        include: {
+          // Assuming we have supplier relation in Product model
+          // If not, we need to add it to schema.prisma
+          // supplier: true
+        }
+      });
+
+      // ============================================
+      // 2. CREATE ORDER
+      // ============================================
       const order = await prisma.order.create({
         data: {
           orderNumber,
@@ -75,24 +90,98 @@ const orderModel = {
           }
         }
       });
-      
+
       console.log('✅ Order created successfully!');
       console.log('Order ID:', order.id);
       console.log('Order Number:', order.orderNumber);
       console.log('Total:', order.totalAmount);
-      
-      // Update product quantities
-      for (const item of orderData.items) {
-        await prisma.product.update({
-          where: { id: item.productId },
-          data: {
-            quantity: {
-              decrement: item.quantity
-            }
+
+      // ============================================
+      // 3. UPDATE CUSTOMER STATISTICS
+      // ============================================
+      if (orderData.customerId) {
+        try {
+          // Get current customer
+          const customer = await prisma.customer.findUnique({
+            where: { id: orderData.customerId }
+          });
+
+          if (customer) {
+            // Update customer stats
+            await prisma.customer.update({
+              where: { id: orderData.customerId },
+              data: {
+                totalOrders: (customer.totalOrders || 0) + 1,
+                totalSpent: (parseFloat(customer.totalSpent || 0) + totalAmount).toFixed(2),
+                lastActive: new Date()
+              }
+            });
+            console.log('✅ Customer statistics updated');
           }
-        });
+        } catch (customerError) {
+          console.error('⚠️ Error updating customer statistics:', customerError);
+          // Don't fail the whole order if customer update fails
+        }
       }
-      
+
+      // ============================================
+      // 4. UPDATE PRODUCT STATISTICS
+      // ============================================
+      try {
+        for (const item of orderData.items) {
+          // Update product stock and sales
+          await prisma.product.update({
+            where: { id: item.productId },
+            data: {
+              quantity: {
+                decrement: item.quantity
+              },
+              sales: {
+                increment: item.quantity
+              },
+              updatedAt: new Date()
+            }
+          });
+
+          console.log(`✅ Product ${item.productId} updated: -${item.quantity} stock, +${item.quantity} sales`);
+        }
+      } catch (productError) {
+        console.error('⚠️ Error updating product statistics:', productError);
+        // Continue even if product updates fail
+      }
+
+      // ============================================
+      // 5. UPDATE SUPPLIER STATISTICS (if we have supplier relation)
+      // ============================================
+      // Note: This requires adding supplierId to Product model
+      // If you have suppliers in your schema, uncomment and adapt this section:
+      /*
+      try {
+        // Get unique supplier IDs from products
+        const supplierIds = [...new Set(products.map(p => p.supplierId).filter(id => id))];
+        
+        for (const supplierId of supplierIds) {
+          // Calculate total from this supplier
+          const supplierProducts = products.filter(p => p.supplierId === supplierId);
+          const supplierTotal = orderData.items
+            .filter(item => supplierProducts.some(p => p.id === item.productId))
+            .reduce((sum, item) => sum + (item.price * item.quantity), 0);
+          
+          // Update supplier stats
+          await prisma.supplier.update({
+            where: { id: supplierId },
+            data: {
+              totalOrders: { increment: 1 },
+              totalRevenue: { increment: supplierTotal },
+              lastOrderDate: new Date()
+            }
+          });
+        }
+      } catch (supplierError) {
+        console.error('⚠️ Error updating supplier statistics:', supplierError);
+      }
+      */
+
       return {
         id: order.id,
         orderNumber: order.orderNumber,
@@ -106,7 +195,7 @@ const orderModel = {
         updatedAt: order.updatedAt,
         orderItems: order.orderItems
       };
-      
+
     } catch (error) {
       console.error('❌ Error creating order:', error);
       console.error('Error details:', {
@@ -122,39 +211,79 @@ const orderModel = {
   async deleteOrder(id) {
     try {
       console.log(`Deleting order ${id}`);
-      
-      // First, get order items to update product quantities
+
+      // First, get order with all details
       const order = await prisma.order.findUnique({
         where: { id },
         include: {
+          customer: true,
           orderItems: true
         }
       });
-      
+
       if (order) {
-        // Restore product quantities
-        for (const item of order.orderItems) {
-          await prisma.product.update({
-            where: { id: item.productId },
-            data: {
-              quantity: {
-                increment: item.quantity
-              }
+        // ============================================
+        // 1. RESTORE CUSTOMER STATISTICS
+        // ============================================
+        if (order.customerId) {
+          try {
+            const customer = await prisma.customer.findUnique({
+              where: { id: order.customerId }
+            });
+
+            if (customer) {
+              await prisma.customer.update({
+                where: { id: order.customerId },
+                data: {
+                  totalOrders: Math.max(0, (customer.totalOrders || 1) - 1),
+                  totalSpent: Math.max(0, (parseFloat(customer.totalSpent || 0) - order.totalAmount)).toFixed(2)
+                }
+              });
+              console.log('✅ Customer statistics restored');
             }
-          });
+          } catch (customerError) {
+            console.error('⚠️ Error restoring customer statistics:', customerError);
+          }
         }
+
+        // ============================================
+        // 2. RESTORE PRODUCT STOCK & SALES
+        // ============================================
+        for (const item of order.orderItems) {
+          try {
+            await prisma.product.update({
+              where: { id: item.productId },
+              data: {
+                quantity: {
+                  increment: item.quantity
+                },
+                sales: {
+                  decrement: item.quantity
+                }
+              }
+            });
+            console.log(`✅ Product ${item.productId} stock restored: +${item.quantity}`);
+          } catch (productError) {
+            console.error(`⚠️ Error restoring product ${item.productId}:`, productError);
+          }
+        }
+
+        // ============================================
+        // 3. RESTORE SUPPLIER STATISTICS (if applicable)
+        // ============================================
+        // Similar logic as create but reversed
       }
-      
+
       // Delete order items first
       await prisma.orderItem.deleteMany({
         where: { orderId: id }
       });
-      
+
       // Delete order
       const deletedOrder = await prisma.order.delete({
         where: { id }
       });
-      
+
       console.log('Order deleted successfully');
       return deletedOrder;
     } catch (error) {
@@ -166,7 +295,7 @@ const orderModel = {
   async updateOrderStatus(id, status) {
     try {
       console.log(`Updating order status ${id} to ${status}`);
-      
+
       const order = await prisma.order.update({
         where: { id },
         data: { status },
@@ -179,7 +308,22 @@ const orderModel = {
           }
         }
       });
-      
+
+      // If order is completed, update last purchase date for customer
+      if (status === 'COMPLETED' && order.customerId) {
+        try {
+          await prisma.customer.update({
+            where: { id: order.customerId },
+            data: {
+              lastActive: new Date()
+            }
+          });
+          console.log('✅ Customer last active updated');
+        } catch (customerError) {
+          console.error('⚠️ Error updating customer last active:', customerError);
+        }
+      }
+
       console.log('Order status updated successfully');
       return order;
     } catch (error) {
@@ -191,13 +335,13 @@ const orderModel = {
   async getStats() {
     try {
       console.log('Fetching order stats...');
-      
+
       const totalOrders = await prisma.order.count();
       const completedOrders = await prisma.order.count({
         where: { status: 'COMPLETED' }
       });
       const pendingOrders = await prisma.order.count({
-        where: { 
+        where: {
           OR: [
             { status: 'PENDING' },
             { status: 'PROCESSING' }
@@ -223,6 +367,69 @@ const orderModel = {
         pendingOrders: 0,
         totalRevenue: 0
       };
+    }
+  },
+
+  // ============================================
+  // NEW: Get orders by customer ID
+  // ============================================
+  async getOrdersByCustomer(customerId) {
+    try {
+      const orders = await prisma.order.findMany({
+        where: { customerId },
+        include: {
+          orderItems: {
+            include: {
+              product: true
+            }
+          }
+        },
+        orderBy: {
+          createdAt: 'desc'
+        }
+      });
+      return orders;
+    } catch (error) {
+      console.error('Error in getOrdersByCustomer:', error);
+      return [];
+    }
+  },
+
+  // ============================================
+  // NEW: Get recent orders summary
+  // ============================================
+  async getRecentOrdersSummary(limit = 10) {
+    try {
+      const orders = await prisma.order.findMany({
+        take: limit,
+        include: {
+          customer: {
+            select: {
+              id: true,
+              name: true,
+              email: true
+            }
+          },
+          orderItems: {
+            include: {
+              product: {
+                select: {
+                  id: true,
+                  name: true,
+                  category: true
+                }
+              }
+            }
+          }
+        },
+        orderBy: {
+          createdAt: 'desc'
+        }
+      });
+      return orders;
+    } catch (error) {
+      console.error('Error in getRecentOrdersSummary:', error);
+      return [];
     }
   }
 };
