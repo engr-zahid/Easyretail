@@ -1,10 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { 
-  getCustomer, 
-  createCustomer, 
-  updateCustomer 
-} from '../../utils/api';
+import { customerAPI } from '../../utils/api';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Loader from '../../components/common/Loader';
@@ -36,7 +32,7 @@ const AddEditCustomer = () => {
   const fetchCustomer = async () => {
     try {
       setLoading(true);
-      const response = await getCustomer(id);
+      const response = await customerAPI.getById(id);
       setFormData(response.data);
       setError('');
     } catch (error) {
@@ -80,9 +76,9 @@ const AddEditCustomer = () => {
       setError('');
       
       if (isEditMode) {
-        await updateCustomer(id, formData);
+        await customerAPI.update(id, formData);
       } else {
-        await createCustomer(formData);
+        await customerAPI.create(formData);
       }
       
       navigate('/customers');
@@ -101,7 +97,6 @@ const AddEditCustomer = () => {
       [name]: value
     }));
     
-    // Clear error for this field when user starts typing
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,

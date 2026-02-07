@@ -31,25 +31,28 @@ const upload = multer({
 
 const productController = require('../controllers/productController');
 
-// GET all products
-router.get('/products', productController.getAllProducts);
+// ✅ FIXED: Removed duplicate "/products" from all routes
+// These routes are mounted at "/api/products" in app.js
 
-// GET product by ID
-router.get('/products/:id', productController.getProductById);
+// GET /api/products
+router.get('/', productController.getAllProducts);
 
-// POST create new product (with file upload)
-router.post('/products', upload.single('image'), productController.createProduct);
+// GET /api/products/:id
+router.get('/:id', productController.getProductById);
 
-// PUT update product (with optional file upload)
-router.put('/products/:id', upload.single('image'), productController.updateProduct);
+// POST /api/products
+router.post('/', upload.single('image'), productController.createProduct);
 
-// DELETE product
-router.delete('/products/:id', productController.deleteProduct);
+// PUT /api/products/:id
+router.put('/:id', upload.single('image'), productController.updateProduct);
 
-// DELETE all products
-router.delete('/products', productController.clearAllProducts);
+// DELETE /api/products/:id
+router.delete('/:id', productController.deleteProduct);
 
-// Test route - get mock products
+// DELETE /api/products (delete all)
+router.delete('/', productController.clearAllProducts);
+
+// Test route - GET /api/products/test-products
 router.get('/test-products', (req, res) => {
   res.json({
     success: true,

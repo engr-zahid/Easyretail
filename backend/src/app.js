@@ -1,53 +1,47 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-require('dotenv').config();
+const fs = require('fs');
+require('dotenv').config({ path: process.env.NODE_ENV === 'production' ? '.env' : '.env.production' });
 
+// Import your routes
 const productRoutes = require('./routes/productRoute');
 const customerRoutes = require('./routes/customerRoute');
 const supplierRoutes = require('./routes/supplierRoute');
 const orderRoutes = require('./routes/orderRoute');
 
-
 const app = express();
 
-// Middleware
-app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174'],
+// CORS configuration
+const corsOptions = {
+  origin: process.env.NODE_ENV === 'production' 
+    ? false
+    : process.env.CORS_ORIGIN || ['http://localhost:3000', 'http://localhost:5173'],
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type']
-}));
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
 
-// Handle preflight requests
-// app.options('*', cors()); // Removed to fix Express 5 compatibility
+app.use(cors(corsOptions));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Serve uploads statically
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Serve static files from uploads directory
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
-
-// Log all requests
+// Logging middleware
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
   next();
 });
 
-// Routes
-app.use('/api', productRoutes);
-console.log('Product routes loaded');
-
+// API Routes
+app.use('/api/products', productRoutes);
 app.use('/api/customers', customerRoutes);
-console.log('Customer routes loaded');
-
 app.use('/api/suppliers', supplierRoutes);
-console.log('Supplier routes loaded');
-
 app.use('/api/orders', orderRoutes);
-console.log('Order routes loaded');
 
-// Health check route
+// Health check
 app.get('/health', (req, res) => {
   res.status(200).json({
     success: true,
@@ -56,52 +50,73 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Test route
-app.get('/', (req, res) => {
+// Serve frontend in production
+if (process.env.NODE_ENV === 'production') {
+  const frontendPath = '/app/frontend/dist';
+  
+  if (fs.existsSync(frontendPath)) {
+    console.log('✅ Serving frontend from:', frontendPath);
+    app.use(express.static(frontendPath));
+    
+    // Handle SPA routing - WORKING REGEX
+    app.get(/\/(?!api|uploads).*/, (req, res) => {
+      res.sendFile(path.join(frontendPath, 'index.html'));
+    });
+  } else {
+    console.log('⚠️  Frontend not found at:', frontendPath);
+    
+    // Try alternate path
+    const altPath = path.join(__dirname, '../../frontend/dist');
+    if (fs.existsSync(altPath)) {
+      console.log('✅ Found at alternate path:', altPath);
+      app.use(express.static(altPath));
+      app.get(/\/(?!api|uploads).*/, (req, res) => {
+        res.sendFile(path.join(altPath, 'index.html'));
+      });
+    }
+  }
+}
+
+// API info route
+app.get('/api', (req, res) => {
   res.json({ 
     message: 'Shop Management API',
     version: '1.0.0',
+    environment: process.env.NODE_ENV,
     endpoints: {
-      products: {
-        GET: '/api/products',
-        POST: '/api/products',
-        PUT: '/api/products/:id',
-        DELETE: '/api/products/:id',
-        DELETE_ALL: '/api/products'
-      },
-      test: {
-        GET: '/api/test-products'
-      },
-      health: {
-        GET: '/health'
-      }
+      products: '/api/products',
+      customers: '/api/customers',
+      suppliers: '/api/suppliers',
+      orders: '/api/orders',
+      health: '/health'
     }
   });
 });
 
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    message: 'Route not found',
-    requestedUrl: req.url
-  });
-});
-
-// Error handling middleware
+// Global error handler
 app.use((err, req, res, next) => {
-  console.error('Global Error Handler:', err.stack);
+  console.error('Server Error:', err.message);
   
   const statusCode = err.statusCode || 500;
-  const message = process.env.NODE_ENV === 'development' 
-    ? err.message 
-    : 'Something went wrong!';
-  
   res.status(statusCode).json({
     success: false,
-    message,
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+    message: process.env.NODE_ENV === 'production' 
+      ? 'Internal server error' 
+      : err.message
   });
 });
 
-module.exports = app;
+// Start server with error handling
+const PORT = process.env.PORT || 5000;
+
+try {
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Server running in ${process.env.NODE_ENV || 'development'} mode`);
+    console.log(`📡 Listening on port ${PORT}`);
+    console.log(`🗄️  Database: ${process.env.DATABASE_URL ? 'Connected' : 'Not configured'}`);
+    console.log(`🌐 Frontend: ${fs.existsSync('/app/frontend/dist') ? 'Available' : 'Not found'}`);
+  });
+} catch (error) {
+  console.error('❌ Failed to start server:', error);
+  process.exit(1);
+}
