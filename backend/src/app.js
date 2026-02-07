@@ -12,10 +12,10 @@ const orderRoutes = require('./routes/orderRoute');
 
 const app = express();
 
-// CORS configuration
+// CORS configuration - FIXED!
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 
-    ? false
+    ? ['https://easyretail.sevalla.app', 'https://www.easyretail.sevalla.app']  // FIXED LINE
     : process.env.CORS_ORIGIN || ['http://localhost:3000', 'http://localhost:5173'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
@@ -115,6 +115,7 @@ try {
     console.log(`📡 Listening on port ${PORT}`);
     console.log(`🗄️  Database: ${process.env.DATABASE_URL ? 'Connected' : 'Not configured'}`);
     console.log(`🌐 Frontend: ${fs.existsSync('/app/frontend/dist') ? 'Available' : 'Not found'}`);
+    console.log(`🌍 CORS Allowed Origins: ${process.env.NODE_ENV === 'production' ? 'https://easyretail.sevalla.app' : 'http://localhost:*'}`);
   });
 } catch (error) {
   console.error('❌ Failed to start server:', error);
