@@ -6,12 +6,6 @@ require('dotenv').config({
   path: process.env.NODE_ENV === 'production' ? '.env' : '.env.production' 
 });
 
-// Import your routes
-const productRoutes = require('./routes/productRoute');
-const customerRoutes = require('./routes/customerRoute');
-const supplierRoutes = require('./routes/supplierRoute');
-const orderRoutes = require('./routes/orderRoute');
-
 const app = express();
 
 // ========== FIX 1: Update CORS Configuration ==========
@@ -42,14 +36,12 @@ app.use((req, res, next) => {
   next();
 });
 
-// ========== FIX 3: API Routes (MUST come before frontend serving) ==========
-app.use('/api/products', productRoutes);
-app.use('/api/customers', customerRoutes);
-app.use('/api/suppliers', supplierRoutes);
-app.use('/api/orders', orderRoutes);
+// ========== TEMPORARY FIX: Simple test route ==========
+app.get('/api/test', (req, res) => {
+  res.json({ success: true, message: 'API is working' });
+});
 
-// Health check
-app.get('/health', (req, res) => {
+app.get('/api/health', (req, res) => {
   res.status(200).json({
     success: true,
     message: 'Shop Management API is running',
@@ -57,23 +49,63 @@ app.get('/health', (req, res) => {
   });
 });
 
-// API info route
-app.get('/api', (req, res) => {
-  res.json({ 
-    message: 'Shop Management API',
-    version: '1.0.0',
-    environment: process.env.NODE_ENV,
-    endpoints: {
-      products: '/api/products',
-      customers: '/api/customers',
-      suppliers: '/api/suppliers',
-      orders: '/api/orders',
-      health: '/health'
-    }
+// ========== TEMPORARY: Simple product routes ==========
+const simpleProductRoutes = express.Router();
+
+simpleProductRoutes.get('/', (req, res) => {
+  res.json({ success: true, products: [] });
+});
+
+simpleProductRoutes.get('/test-products', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Test products endpoint is working',
+    products: [
+      {
+        id: 'test-1',
+        name: 'Test Product 1',
+        price: 19.99,
+        quantity: 100,
+        category: 'Electronics',
+        status: 'in-stock'
+      },
+      {
+        id: 'test-2',
+        name: 'Test Product 2',
+        price: 29.99,
+        quantity: 50,
+        category: 'Clothing',
+        status: 'low-stock'
+      }
+    ]
   });
 });
 
-// ========== FIX 4: Serve frontend ONLY in production and ONLY for non-API routes ==========
+simpleProductRoutes.get('/:id', (req, res) => {
+  res.json({ 
+    success: true, 
+    product: { 
+      id: req.params.id, 
+      name: 'Sample Product',
+      price: 0,
+      quantity: 0,
+      category: 'General',
+      status: 'in-stock'
+    } 
+  });
+});
+
+app.use('/api/products', simpleProductRoutes);
+
+// ========== FIX 5: API 404 handler ==========
+app.use('/api/*', (req, res) => {
+  res.status(404).json({
+    success: false,
+    message: 'API endpoint not found'
+  });
+});
+
+// ========== FIX 4: Serve frontend ONLY in production ==========
 if (process.env.NODE_ENV === 'production') {
   const frontendPaths = [
     '/app/frontend/dist',
@@ -96,32 +128,20 @@ if (process.env.NODE_ENV === 'production') {
     // Serve static files
     app.use(express.static(staticPath));
     
-    // Handle SPA routing - ONLY for non-API, non-upload routes
-    app.get('*', (req, res, next) => {
-      // Skip API routes, uploads, and static assets
-      if (
-        req.path.startsWith('/api') || 
-        req.path.startsWith('/uploads') ||
-        req.path.includes('.')  // Has file extension
-      ) {
-        return next();
+    // Handle SPA routing - ONLY for non-API routes
+    app.get('*', (req, res) => {
+      // If it's an API route, it should have been caught already
+      if (req.path.startsWith('/api')) {
+        return res.status(404).json({ error: 'API endpoint not found' });
       }
       
-      // Serve index.html for all other routes
+      // For all non-API routes, serve frontend
       res.sendFile(path.join(staticPath, 'index.html'));
     });
   } else {
     console.log('⚠️  Frontend build not found at any expected location');
   }
 }
-
-// ========== FIX 5: API 404 handler ==========
-app.use('/api/*', (req, res) => {
-  res.status(404).json({
-    success: false,
-    message: 'API endpoint not found'
-  });
-});
 
 // Global error handler
 app.use((err, req, res, next) => {

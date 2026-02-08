@@ -47,31 +47,25 @@ const ProductList = () => {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [fetchError, setFetchError] = useState(null); // ADDED: Error state
+  const [fetchError, setFetchError] = useState(null);
   
   const addButtonRef = useRef(null);
   const addModalButtonRef = useRef(null);
   const editModalButtonRef = useRef(null);
   const deleteButtonRefs = useRef({});
   
-  // Products state - now fetched from backend
   const [products, setProducts] = useState([]);
   
-  // PRODUCTION API BASE URL - FIXED
-  // Use relative path - nginx will proxy to backend
-  const API_BASE_URL = '/api';
+  // Use relative paths for production - FIXED
+  // Remove all axios.defaults.baseURL configuration
   
-  // Set axios default base URL for all requests
-  // Use relative paths by default
-  axios.defaults.baseURL = ''; 
-
   const fetchProducts = async () => {
     try {
       setIsLoading(true);
-      setFetchError(null); // Clear previous errors
-      console.log('Fetching products from:', `${API_BASE_URL}/products`);
+      setFetchError(null);
+      console.log('Fetching products from:', '/api/products');
 
-      const res = await axios.get(`${API_BASE_URL}/products`, {
+      const res = await axios.get('/api/products', {
         headers: {
           'Content-Type': 'application/json',
         },
@@ -80,20 +74,15 @@ const ProductList = () => {
 
       console.log('Full response:', res);
 
-      // Handle different response structures
       let productsArray = [];
       
       if (Array.isArray(res.data)) {
-        // Case 1: Direct array response
         productsArray = res.data;
       } else if (res.data && res.data.success && Array.isArray(res.data.products)) {
-        // Case 2: Wrapped in success object
         productsArray = res.data.products;
       } else if (res.data && res.data.products) {
-        // Case 3: Products property exists
         productsArray = res.data.products;
       } else {
-        // Try test endpoint as fallback
         console.warn('Unexpected response structure, trying test endpoint');
         return await fetchTestProducts();
       }
@@ -120,13 +109,12 @@ const ProductList = () => {
 
       setProducts(transformedProducts);
       console.log('Products loaded successfully:', transformedProducts.length);
-      setFetchError(null); // Clear any previous errors
+      setFetchError(null);
 
     } catch (err) {
       console.error("Error fetching products:", err);
       setFetchError(err.message || 'Failed to fetch products');
       
-      // Try test endpoint as fallback
       await fetchTestProducts();
       
     } finally {
@@ -134,11 +122,10 @@ const ProductList = () => {
     }
   };
 
-  // Fallback function for test products
   const fetchTestProducts = async () => {
     try {
-      console.log('Trying test endpoint:', `${API_BASE_URL}/products/test-products`);
-      const res = await axios.get(`${API_BASE_URL}/products/test-products`);
+      console.log('Trying test endpoint:', '/api/products/test-products');
+      const res = await axios.get('/api/products/test-products');
       
       if (res.data && res.data.products) {
         const transformedProducts = res.data.products.map(product => ({
@@ -163,12 +150,10 @@ const ProductList = () => {
       }
     } catch (err) {
       console.error('Failed to load test products:', err);
-      // Final fallback - mock data
       setProducts(getMockProducts());
     }
   };
 
-  // Mock products as final fallback
   const getMockProducts = () => {
     return [
       {
@@ -206,12 +191,10 @@ const ProductList = () => {
     ];
   };
 
-  // Initialize products on component mount
   useEffect(() => {
     fetchProducts();
   }, []);
   
-  // New product state
   const [newProduct, setNewProduct] = useState({
     name: '',
     category: 'Clothing',
@@ -224,7 +207,6 @@ const ProductList = () => {
     imagePreview: null
   });
 
-  // Listen for theme changes from Navbar
   useEffect(() => {
     const handleThemeChange = (event) => {
       setIsDarkMode(event.detail);
@@ -245,7 +227,6 @@ const ProductList = () => {
     }
   }, [products]);
 
-  // Cleanup blob URLs to prevent memory leaks
   useEffect(() => {
     return () => {
       if (newProduct.imagePreview && newProduct.imagePreview.startsWith('blob:')) {
@@ -254,7 +235,6 @@ const ProductList = () => {
     };
   }, [newProduct.imagePreview]);
 
-  // Function to calculate stock status based on stock quantity
   const calculateStockStatus = (stock) => {
     const stockNum = parseInt(stock) || 0;
     if (stockNum === 0) return 'out-of-stock';
@@ -262,7 +242,6 @@ const ProductList = () => {
     return 'in-stock';
   };
 
-  // Categories with updated counts based on actual products
   const categories = [
     { name: 'All Categories', count: products.length, gradient: 'from-orange-400 via-amber-400 to-yellow-400', icon: '📊', darkGradient: 'from-orange-500 via-amber-500 to-yellow-500' },
     { name: 'Clothing', count: products.filter(p => p.category === 'Clothing').length, gradient: 'from-rose-400 via-pink-400 to-red-400', icon: '👕', darkGradient: 'from-rose-500 via-pink-500 to-red-500' },
@@ -272,12 +251,9 @@ const ProductList = () => {
     { name: 'Fitness', count: products.filter(p => p.category === 'Fitness').length, gradient: 'from-red-400 via-rose-400 to-pink-400', icon: '🏋️', darkGradient: 'from-red-500 via-rose-500 to-pink-500' },
   ];
 
-  // Calculate status stats based on actual products - FIXED COMPLETELY
   const calculateStatusStats = () => {
-    // Recalculate status for all products to ensure accuracy
     const productsWithCorrectedStatus = products.map(product => ({
       ...product,
-      // Ensure status matches current stock
       status: calculateStockStatus(product.stock || product.quantity || 0)
     }));
 
@@ -322,7 +298,6 @@ const ProductList = () => {
     
     const matchesCategory = categoryFilter === 'All Categories' || product.category === categoryFilter;
     
-    // FIXED: Use recalculated status for filtering to match the inventory status
     const currentProductStatus = calculateStockStatus(product.stock || product.quantity || 0);
     const matchesStatus = statusFilter === 'All Status' || 
                          currentProductStatus === statusFilter.toLowerCase().replace(' ', '-');
@@ -330,7 +305,6 @@ const ProductList = () => {
     return matchesSearch && matchesCategory && matchesStatus;
   });
 
-  // Animated Add Product button handler
   const handleAddButtonClick = () => {
     if (addButtonRef.current) {
       addButtonRef.current.classList.add('animate-pulse-once');
@@ -341,7 +315,6 @@ const ProductList = () => {
       }, 500);
     }
     
-    // Add warm sparkle effect
     setIsAddingProduct(true);
     setTimeout(() => {
       setIsAddingProduct(false);
@@ -349,7 +322,6 @@ const ProductList = () => {
     }, 300);
   };
 
-  // Animated Add Product in modal handler
   const handleAddProductClick = () => {
     if (addModalButtonRef.current) {
       addModalButtonRef.current.classList.add('animate-pulse-once');
@@ -363,7 +335,6 @@ const ProductList = () => {
     handleAddProduct();
   };
 
-  // Animated Edit Product in modal handler
   const handleEditProductClick = () => {
     if (editModalButtonRef.current) {
       editModalButtonRef.current.classList.add('animate-pulse-once');
@@ -377,7 +348,6 @@ const ProductList = () => {
     handleEditProduct();
   };
 
-  // Add product to backend
   const addProduct = async (productData) => {
     try {
       setIsProcessing(true);
@@ -385,9 +355,7 @@ const ProductList = () => {
       let requestData;
       let headers = {};
 
-      // Check if we have an image file to upload
       if (productData.imageFile) {
-        // Use FormData for file upload
         requestData = new FormData();
         requestData.append('name', productData.name);
         requestData.append('category', productData.category);
@@ -396,7 +364,7 @@ const ProductList = () => {
         requestData.append('description', productData.description || '');
         requestData.append('sales', productData.sales || 0);
         requestData.append('status', productData.status || 'in-stock');
-        requestData.append('image', productData.imageFile); // File object
+        requestData.append('image', productData.imageFile);
 
         console.log('Sending product data with file:', {
           name: productData.name,
@@ -404,7 +372,6 @@ const ProductList = () => {
           hasImage: !!productData.imageFile
         });
       } else {
-        // Use JSON for text-only data
         requestData = {
           name: productData.name,
           category: productData.category,
@@ -420,12 +387,12 @@ const ProductList = () => {
         console.log('Sending product data (no file):', requestData);
       }
 
-      const response = await axios.post(`${API_BASE_URL}/products`, requestData, { headers });
+      const response = await axios.post('/api/products', requestData, { headers });
 
       console.log('Product added response:', response.data);
 
       if (response.data && response.data.success) {
-        await fetchProducts(); // Refresh list
+        await fetchProducts();
         return {
           success: true,
           product: response.data.product,
@@ -437,7 +404,6 @@ const ProductList = () => {
     } catch (err) {
       console.error("Error adding product:", err.response?.data || err.message);
 
-      // Fallback: Add to local state if backend fails
       console.log('Adding product to local state as fallback');
       const newId = `local-${Date.now()}`;
       const newProduct = {
@@ -447,11 +413,9 @@ const ProductList = () => {
         status: calculateStockStatus(productData.stock || 0),
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        // Ensure image is properly set
         image: productData.imageFile ? '📦' : (productData.image || '📦')
       };
 
-      // Add to local state immediately
       setProducts(prev => [...prev, newProduct]);
 
       return {
@@ -465,30 +429,26 @@ const ProductList = () => {
     }
   };
 
-  // Update product in backend - UPDATED
   const updateProduct = async (productId, productData) => {
     try {
       setIsProcessing(true);
-      // Prepare data for backend
       const backendProduct = {
         name: productData.name,
         category: productData.category,
         price: parseFloat(productData.price) || 0,
         stock: parseInt(productData.stock) || 0,
-        quantity: parseInt(productData.stock) || 0, // Send both stock and quantity
+        quantity: parseInt(productData.stock) || 0,
         description: productData.description || '',
         image: productData.image || '📦'
       };
       
-      const response = await axios.put(`${API_BASE_URL}/products/${productId}`, backendProduct);
+      const response = await axios.put(`/api/products/${productId}`, backendProduct);
       
-      // Refresh products list
       await fetchProducts();
       
       return response.data;
     } catch (err) {
       console.error("Error updating product:", err);
-      // Fallback: Update local state
       const updatedProducts = products.map(p => 
         p.id === productId ? { ...p, ...backendProduct } : p
       );
@@ -499,19 +459,16 @@ const ProductList = () => {
     }
   };
 
-  // Delete product from backend - UPDATED
   const deleteProduct = async (productId) => {
     try {
       setIsProcessing(true);
-      await axios.delete(`${API_BASE_URL}/products/${productId}`);
+      await axios.delete(`/api/products/${productId}`);
       
-      // Refresh products list
       await fetchProducts();
       
       return true;
     } catch (err) {
       console.error("Error deleting product:", err);
-      // Fallback: Delete from local state
       setProducts(prev => prev.filter(p => p.id !== productId));
       throw err;
     } finally {
@@ -519,26 +476,22 @@ const ProductList = () => {
     }
   };
 
-  // Clear all products from backend - UPDATED
   const clearAllProducts = async () => {
     try {
       setIsProcessing(true);
-      // Try to clear on backend
       try {
         for (const product of products) {
-          await axios.delete(`${API_BASE_URL}/products/${product.id}`);
+          await axios.delete(`/api/products/${product.id}`);
         }
       } catch (error) {
         console.log('Backend clear failed, clearing local state only');
       }
       
-      // Clear local state
       setProducts([]);
       
       return true;
     } catch (err) {
       console.error("Error clearing products:", err);
-      // Fallback: Clear local state
       setProducts([]);
       throw err;
     } finally {
@@ -546,7 +499,6 @@ const ProductList = () => {
     }
   };
 
-  // Delete product function - Updated to show animation on confirm
   const handleDeleteProduct = async () => {
     setTrashAnimation(true);
     
@@ -555,7 +507,6 @@ const ProductList = () => {
         await deleteProduct(selectedProduct.id);
         setShowDeleteModal(false);
         setSelectedProduct(null);
-        // Update status stats after deletion
         setAnimateStats(true);
         setTimeout(() => setAnimateStats(false), 800);
       }
@@ -567,19 +518,16 @@ const ProductList = () => {
     }
   };
 
-  // Edit product function - FIXED COMPLETELY
   const handleEditProduct = async () => {
     if (selectedProduct) {
       try {
-        // Calculate status based on stock before updating
         const updatedProduct = {
           ...selectedProduct,
           price: parseFloat(selectedProduct.price) || 0,
           stock: parseInt(selectedProduct.stock) || 0,
-          status: calculateStockStatus(selectedProduct.stock) // Recalculate status
+          status: calculateStockStatus(selectedProduct.stock)
         };
         
-        // Call updateProduct with the corrected product
         await updateProduct(updatedProduct.id, updatedProduct);
         setShowEditModal(false);
         setSelectedProduct(null);
@@ -592,16 +540,13 @@ const ProductList = () => {
     }
   };
 
-  // Add new product function with success animation - FIXED
   const handleAddProduct = async () => {
     if (newProduct.name && newProduct.price && newProduct.stock) {
       try {
-        // Calculate status based on stock before adding
         const stockNum = parseInt(newProduct.stock) || 0;
         const priceNum = parseFloat(newProduct.price) || 0;
         const calculatedStatus = calculateStockStatus(stockNum);
         
-        // Generate a unique ID for the new product
         const newProductId = `PROD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
         
         const productToAdd = {
@@ -613,13 +558,12 @@ const ProductList = () => {
           status: calculatedStatus,
           description: newProduct.description,
           image: newProduct.image || '📦',
-          imageFile: newProduct.imageFile, // Include the file for upload
-          sales: Math.floor(Math.random() * 100) // Random sales for demo
+          imageFile: newProduct.imageFile,
+          sales: Math.floor(Math.random() * 100)
         };
         
         await addProduct(productToAdd);
         
-        // Show success animation
         setAddSuccessAnimation(true);
         setTimeout(() => setAddSuccessAnimation(false), 1500);
         
@@ -636,7 +580,6 @@ const ProductList = () => {
           imagePreview: null
         });
         
-        // Update status stats
         setAnimateStats(true);
         setTimeout(() => setAnimateStats(false), 800);
       } catch (error) {
@@ -648,15 +591,12 @@ const ProductList = () => {
     }
   };
 
-  // View product function
   const handleViewProduct = (product) => {
     setSelectedProduct(product);
     setShowViewModal(true);
   };
 
-  // Edit button click - FIXED
   const handleEditClick = (product) => {
-    // Create a copy of the product to avoid reference issues
     const productCopy = {
       ...product,
       price: typeof product.price === 'string' && product.price.includes('$') 
@@ -668,11 +608,9 @@ const ProductList = () => {
     setShowEditModal(true);
   };
 
-  // Delete button click with animation
   const handleDeleteClick = (product) => {
     setSelectedProduct(product);
     
-    // Trigger individual button animation (just shake)
     const buttonKey = product.id;
     if (deleteButtonRefs.current[buttonKey]) {
       deleteButtonRefs.current[buttonKey].classList.add('animate-shake');
@@ -683,11 +621,9 @@ const ProductList = () => {
       }, 500);
     }
     
-    // Show delete modal immediately without the falling animation
     setShowDeleteModal(true);
   };
 
-  // Export function
   const handleExport = () => {
     if (products.length === 0) {
       alert('No products to export!');
@@ -706,7 +642,6 @@ const ProductList = () => {
     URL.revokeObjectURL(url);
   };
 
-  // Clear all products function
   const handleClearAll = async () => {
     if (window.confirm('Are you sure you want to clear all products? This cannot be undone.')) {
       try {
@@ -724,7 +659,6 @@ const ProductList = () => {
     }
   };
 
-  // Reset filters function
   const handleResetFilters = () => {
     setSearch('');
     setCategoryFilter('All Categories');
@@ -732,7 +666,6 @@ const ProductList = () => {
     setCurrentPage(1);
   };
 
-  // Calculate average price
   const calculateAveragePrice = () => {
     if (products.length === 0) return '$0.00';
     
@@ -746,12 +679,10 @@ const ProductList = () => {
     return `$${(total / products.length).toFixed(2)}`;
   };
 
-  // Calculate total sales
   const calculateTotalSales = () => {
     return products.reduce((sum, product) => sum + (product.sales || 0), 0);
   };
 
-  // Handle input change for edit modal - FIXED
   const handleEditInputChange = (field, value) => {
     setSelectedProduct(prev => {
       const updatedProduct = {
@@ -759,7 +690,6 @@ const ProductList = () => {
         [field]: value
       };
       
-      // Automatically update status when stock changes
       if (field === 'stock') {
         updatedProduct.status = calculateStockStatus(value);
       }
@@ -768,7 +698,6 @@ const ProductList = () => {
     });
   };
 
-  // Handle input change for add modal
   const handleAddInputChange = (field, value) => {
     setNewProduct(prev => {
       const updatedProduct = {
@@ -776,7 +705,6 @@ const ProductList = () => {
         [field]: value
       };
       
-      // Automatically update status when stock changes
       if (field === 'stock') {
         updatedProduct.status = calculateStockStatus(value);
       }
@@ -785,57 +713,47 @@ const ProductList = () => {
     });
   };
 
-  // Handle image upload
   const handleImageUpload = (e, isEdit = false) => {
     const file = e.target.files[0];
     if (file) {
-      // Validate file size (5MB limit)
       if (file.size > 5 * 1024 * 1024) {
         alert('File size too large. Maximum size is 5MB.');
         return;
       }
 
-      // Validate file type
       if (!file.type.startsWith('image/')) {
         alert('Please select a valid image file.');
         return;
       }
 
-      // Store file for upload and preview
       if (isEdit && selectedProduct) {
         handleEditInputChange('imageFile', file);
-        // Create preview URL for display
         const previewUrl = URL.revokeObjectURL(file);
         handleEditInputChange('imagePreview', previewUrl);
       } else {
         handleAddInputChange('imageFile', file);
-        // Create preview URL for display
         const previewUrl = URL.revokeObjectURL(file);
         handleAddInputChange('imagePreview', previewUrl);
       }
     }
   };
 
-  // Calculate pagination
   const itemsPerPage = 5;
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage) || 1;
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedProducts = filteredProducts.slice(startIndex, startIndex + itemsPerPage);
 
-  // Get unique categories for filter dropdown
   const uniqueCategories = ['All Categories', ...new Set(products.map(p => p.category))];
 
-  // Get emoji from image with better validation
   const getEmojiFromImage = (image) => {
     if (!image || typeof image !== 'string') {
       return '📦';
     }
-    // Handle production image URLs
     if (image.startsWith('/uploads/')) {
-      return '📦'; // Show placeholder for uploaded images
+      return '📦';
     }
     if (image.startsWith('http')) {
-      return '📦'; // Show placeholder for external URLs
+      return '📦';
     }
     return image;
   };
@@ -845,22 +763,18 @@ const ProductList = () => {
       return null;
     }
     
-    // Handle emoji/icon - show as text
     if (image.length <= 3 && !image.startsWith('http') && !image.startsWith('/')) {
       return null;
     }
     
-    // Handle uploaded images - use relative path
     if (image.startsWith('/uploads/')) {
-      return image; // Relative path, nginx will serve it
+      return image;
     }
     
-    // Handle full URLs
     if (image.startsWith('http')) {
       return image;
     }
     
-    // Handle data URLs
     if (image.startsWith('data:image')) {
       return image;
     }
@@ -868,7 +782,6 @@ const ProductList = () => {
     return null;
   };
   
-  // Add CSS for custom animations with warm gradients and dark mode
   const animationStyles = `
     @keyframes float {
       0%, 100% { transform: translateY(0px) rotate(0deg); }
@@ -1229,7 +1142,6 @@ const ProductList = () => {
     }
   `;
 
-  // Loading and Error states
   if (isLoading && !fetchError) {
     return (
       <div className={`${isDarkMode ? 'warm-bg-dark' : 'warm-bg'} min-h-screen flex items-center justify-center`}>
@@ -1241,7 +1153,6 @@ const ProductList = () => {
     );
   }
 
-  // Error display
   if (fetchError && products.length === 0) {
     return (
       <div className={`${isDarkMode ? 'warm-bg-dark' : 'warm-bg'} min-h-screen flex items-center justify-center p-4`}>
@@ -1327,7 +1238,7 @@ const ProductList = () => {
           </div>
         )}
         
-        {/* Delete animation overlay - Now shows when confirming delete */}
+        {/* Delete animation overlay */}
         {deleteAnimation && selectedProduct && (
           <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
             <div className="relative">
@@ -1711,7 +1622,6 @@ const ProductList = () => {
                                 </span>
                               </td>
                               <td className="px-4 py-3 whitespace-nowrap">
-                                {/* Stock cell - updated to show dynamic color based on current stock */}
                                 <div className="flex items-center gap-2">
                                   <span className={`font-semibold text-sm ${
                                     calculateStockStatus(product.stock || product.quantity || 0) === 'in-stock' ? (isDarkMode ? 'text-emerald-400' : 'text-emerald-600') :
@@ -1726,7 +1636,6 @@ const ProductList = () => {
                                 </div>
                               </td>
                               <td className="px-4 py-3 whitespace-nowrap">
-                                {/* Status cell - updated to use calculateStockStatus */}
                                 <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-medium ${
                                   calculateStockStatus(product.stock || product.quantity || 0) === 'in-stock' ? (isDarkMode ? 'bg-emerald-900/30 text-emerald-300 border-emerald-800' : 'bg-emerald-50 text-emerald-700 border-emerald-200') :
                                   calculateStockStatus(product.stock || product.quantity || 0) === 'low-stock' ? (isDarkMode ? 'bg-amber-900/30 text-amber-300 border-amber-800' : 'bg-amber-50 text-amber-700 border-amber-200') :
@@ -1838,7 +1747,6 @@ const ProductList = () => {
                     
                     <div className="space-y-2 sm:space-y-3 lg:space-y-4">
                       {statusStats.map((stat, index) => {
-                        // Calculate exact percentage (0-100%)
                         const percentage = products.length > 0 
                           ? (stat.count / products.length) * 100
                           : 0;
@@ -1879,15 +1787,13 @@ const ProductList = () => {
                                   style={{ 
                                     width: `${percentage}%`,
                                     animationDelay: `${index * 0.2}s`,
-                                    // SOLID COLOR BASED ON STATUS
                                     background: stat.label === 'In Stock' 
-                                      ? (isDarkMode ? '#10b981' : '#34d399') // Green
+                                      ? (isDarkMode ? '#10b981' : '#34d399')
                                       : stat.label === 'Low Stock' 
-                                      ? (isDarkMode ? '#f59e0b' : '#fbbf24') // Amber/Yellow
-                                      : (isDarkMode ? '#ef4444' : '#f87171') // Red
+                                      ? (isDarkMode ? '#f59e0b' : '#fbbf24')
+                                      : (isDarkMode ? '#ef4444' : '#f87171')
                                   }}
                                 >
-                                  {/* Shine effect for animated look */}
                                   <div 
                                     className={`absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent ${
                                       stat.count > 0 ? 'animate-pulse' : ''
@@ -1899,7 +1805,6 @@ const ProductList = () => {
                                 </div>
                               </div>
                               
-                              {/* Optional: Show percentage label on hover */}
                               <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
                                 <span 
                                   className={`text-xs font-bold px-2 py-1 rounded-full backdrop-blur-sm ${
@@ -2141,7 +2046,6 @@ const ProductList = () => {
                     </button>
                     <button
                       onClick={() => {
-                        // Show animation first, then delete
                         setTrashAnimation(true);
                         setTimeout(() => {
                           handleDeleteProduct();
