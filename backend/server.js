@@ -1,7 +1,10 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-require('dotenv').config({ path: process.env.NODE_ENV === 'production' ? '.env' : '.env.production' });
+const fs = require('fs');
+require('dotenv').config({ 
+  path: process.env.NODE_ENV === 'production' ? '.env' : '.env.production' 
+});
 
 // Import your routes
 const productRoutes = require('./routes/productRoute');
@@ -11,17 +14,22 @@ const orderRoutes = require('./routes/orderRoute');
 
 const app = express();
 
-// CORS configuration for production
+// ========== FIX 1: Update CORS Configuration ==========
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 
-    ? false  // No CORS needed when frontend is served from same origin
+    ? ['https://easyretail.sevalla.app', 'https://www.easyretail.sevalla.app']
     : process.env.CORS_ORIGIN || ['http://localhost:3000', 'http://localhost:5173'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  optionsSuccessStatus: 200
 };
 
 app.use(cors(corsOptions));
+
+// ========== FIX 2: Handle OPTIONS preflight requests globally ==========
+app.options('*', cors(corsOptions));
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
@@ -34,7 +42,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// API Routes
+// ========== FIX 3: API Routes (MUST come before frontend serving) ==========
 app.use('/api/products', productRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/suppliers', supplierRoutes);
@@ -48,21 +56,6 @@ app.get('/health', (req, res) => {
     timestamp: new Date().toISOString()
   });
 });
-
-// Serve frontend in production
-if (process.env.NODE_ENV === 'production') {
-  const frontendPath = path.join(__dirname, '../frontend/dist');
-  app.use(express.static(frontendPath));
-  
-  // Handle SPA routing
-  app.get('*', (req, res) => {
-    if (!req.path.startsWith('/api')) {
-      res.sendFile(path.join(frontendPath, 'index.html'));
-    } else {
-      next();
-    }
-  });
-}
 
 // API info route
 app.get('/api', (req, res) => {
@@ -80,7 +73,49 @@ app.get('/api', (req, res) => {
   });
 });
 
-// 404 handler for API routes
+// ========== FIX 4: Serve frontend ONLY in production and ONLY for non-API routes ==========
+if (process.env.NODE_ENV === 'production') {
+  const frontendPaths = [
+    '/app/frontend/dist',
+    path.join(__dirname, '../frontend/dist'),
+    path.join(__dirname, '../../frontend/dist')
+  ];
+  
+  let staticPath = null;
+  
+  // Find the frontend build
+  for (const frontendPath of frontendPaths) {
+    if (fs.existsSync(frontendPath)) {
+      staticPath = frontendPath;
+      console.log('✅ Serving frontend from:', frontendPath);
+      break;
+    }
+  }
+  
+  if (staticPath) {
+    // Serve static files
+    app.use(express.static(staticPath));
+    
+    // Handle SPA routing - ONLY for non-API, non-upload routes
+    app.get('*', (req, res, next) => {
+      // Skip API routes, uploads, and static assets
+      if (
+        req.path.startsWith('/api') || 
+        req.path.startsWith('/uploads') ||
+        req.path.includes('.')  // Has file extension
+      ) {
+        return next();
+      }
+      
+      // Serve index.html for all other routes
+      res.sendFile(path.join(staticPath, 'index.html'));
+    });
+  } else {
+    console.log('⚠️  Frontend build not found at any expected location');
+  }
+}
+
+// ========== FIX 5: API 404 handler ==========
 app.use('/api/*', (req, res) => {
   res.status(404).json({
     success: false,
@@ -90,21 +125,28 @@ app.use('/api/*', (req, res) => {
 
 // Global error handler
 app.use((err, req, res, next) => {
-  console.error('Error:', err.stack);
+  console.error('Server Error:', err.message);
   
   const statusCode = err.statusCode || 500;
   res.status(statusCode).json({
     success: false,
     message: process.env.NODE_ENV === 'production' 
       ? 'Internal server error' 
-      : err.message,
-    ...(process.env.NODE_ENV !== 'production' && { stack: err.stack })
+      : err.message
   });
 });
 
+// Start server with error handling
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Server running in ${process.env.NODE_ENV || 'development'} mode`);
-  console.log(`📡 Listening on port ${PORT}`);
-  console.log(`🗄️  Database: ${process.env.DATABASE_URL ? 'Connected' : 'Not configured'}`);
-});
+
+try {
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Server running in ${process.env.NODE_ENV || 'development'} mode`);
+    console.log(`📡 Listening on port ${PORT}`);
+    console.log(`🗄️  Database: ${process.env.DATABASE_URL ? 'Connected' : 'Not configured'}`);
+    console.log(`🌍 CORS Allowed Origins: ${process.env.NODE_ENV === 'production' ? 'https://easyretail.sevalla.app' : 'http://localhost:*'}`);
+  });
+} catch (error) {
+  console.error('❌ Failed to start server:', error);
+  process.exit(1);
+}

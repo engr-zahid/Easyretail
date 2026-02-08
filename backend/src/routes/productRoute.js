@@ -31,8 +31,37 @@ const upload = multer({
 
 const productController = require('../controllers/productController');
 
-// ✅ FIXED: Removed duplicate "/products" from all routes
-// These routes are mounted at "/api/products" in app.js
+// ========== OPTIONS HANDLERS FOR PREFLIGHT REQUESTS ==========
+// These are CRITICAL for CORS preflight requests
+
+// Handle OPTIONS for all product routes
+router.options('/', (req, res) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  res.header('Access-Control-Max-Age', '86400'); // 24 hours
+  res.sendStatus(200);
+});
+
+// Handle OPTIONS for specific product ID routes
+router.options('/:id', (req, res) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  res.header('Access-Control-Max-Age', '86400');
+  res.sendStatus(200);
+});
+
+// Handle OPTIONS for test-products route
+router.options('/test-products', (req, res) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('Access-Control-Max-Age', '86400');
+  res.sendStatus(200);
+});
+
+// ========== MAIN ROUTES ==========
 
 // GET /api/products
 router.get('/', productController.getAllProducts);
@@ -56,6 +85,7 @@ router.delete('/', productController.clearAllProducts);
 router.get('/test-products', (req, res) => {
   res.json({
     success: true,
+    message: 'Test products endpoint is working',
     products: [
       {
         id: 'test-1',

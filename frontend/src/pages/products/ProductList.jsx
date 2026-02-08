@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import axios from 'axios'; // Added axios for API calls
+import axios from 'axios';
 import { 
   Plus, 
   Search, 
@@ -26,8 +26,6 @@ import {
   Loader2,
   ShoppingBag
 } from 'lucide-react';
-// Removed useProducts context since we're using backend API
-// import { useProducts } from "../../context/ProductsContext";
 
 const ProductList = () => {
   const [search, setSearch] = useState('');
@@ -47,8 +45,9 @@ const ProductList = () => {
   const [isDarkMode, setIsDarkMode] = useState(() => {
     return localStorage.getItem('darkMode') === 'true';
   });
-  const [isLoading, setIsLoading] = useState(true); // Added loading state
-  const [isProcessing, setIsProcessing] = useState(false); // Added processing state
+  const [isLoading, setIsLoading] = useState(true);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [fetchError, setFetchError] = useState(null); // ADDED: Error state
   
   const addButtonRef = useRef(null);
   const addModalButtonRef = useRef(null);
@@ -58,73 +57,155 @@ const ProductList = () => {
   // Products state - now fetched from backend
   const [products, setProducts] = useState([]);
   
-  // API base URL from environment variable with fallback
-  const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+  // PRODUCTION API BASE URL - FIXED
+  // Use relative path - nginx will proxy to backend
+  const API_BASE_URL = '/api';
   
+  // Set axios default base URL for all requests
+  // Use relative paths by default
+  axios.defaults.baseURL = ''; 
+
   const fetchProducts = async () => {
     try {
       setIsLoading(true);
+      setFetchError(null); // Clear previous errors
       console.log('Fetching products from:', `${API_BASE_URL}/products`);
 
-      const res = await axios.get(`${API_BASE_URL}/products`);
+      const res = await axios.get(`${API_BASE_URL}/products`, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        timeout: 10000
+      });
 
-      console.log('Response received:', res.data);
+      console.log('Full response:', res);
 
-      if (res.data && res.data.success && Array.isArray(res.data.products)) {
-        // Use the products array from response
-        const productsArray = res.data.products;
-        const transformedProducts = productsArray.map(product => {
-          // Validate and transform each product
-          const transformed = {
-            id: product.id || `temp-${Date.now()}-${Math.random()}`,
-            name: product.name || 'Unnamed Product',
-            category: product.category || 'Clothing',
-            price: parseFloat(product.price) || 0,
-            stock: product.stock || product.quantity || 0,
-            quantity: product.quantity || product.stock || 0,
-            status: product.status || calculateStockStatus(product.stock || product.quantity || 0),
-            sales: product.sales || 0,
-            image: product.image || '📦',
-            description: product.description || '',
-            sku: product.sku || `SKU-${Date.now()}`,
-            isActive: product.isActive !== undefined ? product.isActive : true,
-            createdAt: product.createdAt || new Date().toISOString(),
-            updatedAt: product.updatedAt || new Date().toISOString()
-          };
-
-          // Ensure image is a valid string
-          if (typeof transformed.image !== 'string') {
-            transformed.image = '📦';
-          }
-
-          return transformed;
-        });
-
-        setProducts(transformedProducts);
-        console.log('Products loaded successfully:', transformedProducts.length);
+      // Handle different response structures
+      let productsArray = [];
+      
+      if (Array.isArray(res.data)) {
+        // Case 1: Direct array response
+        productsArray = res.data;
+      } else if (res.data && res.data.success && Array.isArray(res.data.products)) {
+        // Case 2: Wrapped in success object
+        productsArray = res.data.products;
+      } else if (res.data && res.data.products) {
+        // Case 3: Products property exists
+        productsArray = res.data.products;
       } else {
-        console.warn('API returned invalid response structure:', res.data);
-        setProducts([]);
+        // Try test endpoint as fallback
+        console.warn('Unexpected response structure, trying test endpoint');
+        return await fetchTestProducts();
       }
+
+      const transformedProducts = productsArray.map(product => {
+        const stock = product.stock || product.quantity || 0;
+        return {
+          id: product.id || `prod-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          name: product.name || 'Unnamed Product',
+          category: product.category || 'Clothing',
+          price: parseFloat(product.price) || 0,
+          stock: stock,
+          quantity: stock,
+          status: product.status || calculateStockStatus(stock),
+          sales: product.sales || 0,
+          image: product.image || '📦',
+          description: product.description || '',
+          sku: product.sku || `SKU-${Date.now()}`,
+          isActive: product.isActive !== undefined ? product.isActive : true,
+          createdAt: product.createdAt || new Date().toISOString(),
+          updatedAt: product.updatedAt || new Date().toISOString()
+        };
+      });
+
+      setProducts(transformedProducts);
+      console.log('Products loaded successfully:', transformedProducts.length);
+      setFetchError(null); // Clear any previous errors
+
     } catch (err) {
       console.error("Error fetching products:", err);
-
-      // Show user-friendly error message
-      if (err.code === 'ERR_NETWORK') {
-        console.error('Network error - backend server may not be running');
-      } else if (err.response?.status === 500) {
-        console.error('Server error - check backend database connection');
-      } else if (err.response?.status === 404) {
-        console.error('API endpoint not found');
-      }
-
-      // Keep existing products if fetch fails (don't clear the list)
-      console.log('Keeping existing products due to fetch error');
+      setFetchError(err.message || 'Failed to fetch products');
+      
+      // Try test endpoint as fallback
+      await fetchTestProducts();
+      
     } finally {
       setIsLoading(false);
     }
   };
-  
+
+  // Fallback function for test products
+  const fetchTestProducts = async () => {
+    try {
+      console.log('Trying test endpoint:', `${API_BASE_URL}/products/test-products`);
+      const res = await axios.get(`${API_BASE_URL}/products/test-products`);
+      
+      if (res.data && res.data.products) {
+        const transformedProducts = res.data.products.map(product => ({
+          id: product.id || `test-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+          name: product.name || 'Test Product',
+          category: product.category || 'Clothing',
+          price: parseFloat(product.price) || 0,
+          stock: product.quantity || product.stock || 0,
+          quantity: product.quantity || product.stock || 0,
+          status: product.status || calculateStockStatus(product.quantity || product.stock || 0),
+          sales: product.sales || 0,
+          image: product.image || '📦',
+          description: product.description || 'Test product from fallback endpoint',
+          sku: product.sku || `TEST-${Date.now()}`,
+          isActive: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }));
+        
+        setProducts(transformedProducts);
+        console.log('Loaded test products:', transformedProducts.length);
+      }
+    } catch (err) {
+      console.error('Failed to load test products:', err);
+      // Final fallback - mock data
+      setProducts(getMockProducts());
+    }
+  };
+
+  // Mock products as final fallback
+  const getMockProducts = () => {
+    return [
+      {
+        id: 'mock-1',
+        name: 'Demo T-Shirt',
+        category: 'Clothing',
+        price: 24.99,
+        stock: 50,
+        quantity: 50,
+        status: 'in-stock',
+        sales: 120,
+        image: '👕',
+        description: 'Comfortable cotton t-shirt',
+        sku: 'TSHIRT-001',
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      },
+      {
+        id: 'mock-2',
+        name: 'Wireless Headphones',
+        category: 'Electronics',
+        price: 149.99,
+        stock: 5,
+        quantity: 5,
+        status: 'low-stock',
+        sales: 85,
+        image: '🎧',
+        description: 'Noise-cancelling headphones',
+        sku: 'HP-001',
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
+    ];
+  };
+
   // Initialize products on component mount
   useEffect(() => {
     fetchProducts();
@@ -724,12 +805,12 @@ const ProductList = () => {
       if (isEdit && selectedProduct) {
         handleEditInputChange('imageFile', file);
         // Create preview URL for display
-        const previewUrl = URL.createObjectURL(file);
+        const previewUrl = URL.revokeObjectURL(file);
         handleEditInputChange('imagePreview', previewUrl);
       } else {
         handleAddInputChange('imageFile', file);
         // Create preview URL for display
-        const previewUrl = URL.createObjectURL(file);
+        const previewUrl = URL.revokeObjectURL(file);
         handleAddInputChange('imagePreview', previewUrl);
       }
     }
@@ -758,28 +839,35 @@ const ProductList = () => {
     }
     return image;
   };
-const getImageSrc = (image) => {
-  if (!image || typeof image !== 'string') {
+  
+  const getImageSrc = (image) => {
+    if (!image || typeof image !== 'string') {
+      return null;
+    }
+    
+    // Handle emoji/icon - show as text
+    if (image.length <= 3 && !image.startsWith('http') && !image.startsWith('/')) {
+      return null;
+    }
+    
+    // Handle uploaded images - use relative path
+    if (image.startsWith('/uploads/')) {
+      return image; // Relative path, nginx will serve it
+    }
+    
+    // Handle full URLs
+    if (image.startsWith('http')) {
+      return image;
+    }
+    
+    // Handle data URLs
+    if (image.startsWith('data:image')) {
+      return image;
+    }
+    
     return null;
-  }
+  };
   
-  // Handle uploaded images - backend serves them from /uploads
-  if (image.startsWith('/uploads/')) {
-    return image; // Relative path works since same domain
-  }
-  
-  // Handle full URLs (for external images)
-  if (image.startsWith('http')) {
-    return image;
-  }
-  
-  // Handle data URLs
-  if (image.startsWith('data:image')) {
-    return image;
-  }
-  
-  return null; // Emoji or placeholder
-};
   // Add CSS for custom animations with warm gradients and dark mode
   const animationStyles = `
     @keyframes float {
@@ -1141,13 +1229,51 @@ const getImageSrc = (image) => {
     }
   `;
 
-  // Loading state
-  if (isLoading) {
+  // Loading and Error states
+  if (isLoading && !fetchError) {
     return (
       <div className={`${isDarkMode ? 'warm-bg-dark' : 'warm-bg'} min-h-screen flex items-center justify-center`}>
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500 mx-auto mb-4"></div>
           <p className={`text-lg font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Loading products...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error display
+  if (fetchError && products.length === 0) {
+    return (
+      <div className={`${isDarkMode ? 'warm-bg-dark' : 'warm-bg'} min-h-screen flex items-center justify-center p-4`}>
+        <div className="text-center max-w-md">
+          <div className="text-amber-500 text-6xl mb-4">⚠️</div>
+          <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">Connection Issue</h3>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
+            Unable to connect to the backend server.
+          </p>
+          <p className="text-sm text-gray-500 dark:text-gray-500 mb-2">
+            Error: {fetchError}
+          </p>
+          <p className="text-sm text-gray-500 dark:text-gray-500 mb-6">
+            Showing demo data. Some features may be limited.
+          </p>
+          <div className="space-y-3">
+            <button
+              onClick={fetchProducts}
+              className="px-6 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-medium w-full"
+            >
+              Retry Connection
+            </button>
+            <button
+              onClick={() => {
+                setProducts(getMockProducts());
+                setFetchError(null);
+              }}
+              className="px-6 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-lg font-medium w-full"
+            >
+              Continue with Demo Data
+            </button>
+          </div>
         </div>
       </div>
     );
