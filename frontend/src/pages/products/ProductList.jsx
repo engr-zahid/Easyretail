@@ -60,7 +60,7 @@ const ProductList = () => {
   const [products, setProducts] = useState([]);
   
   // API base URL
-  const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
   const fetchProducts = async () => {
     try {
       setIsLoading(true);
@@ -1381,8 +1381,7 @@ const addProduct = async (productData) => {
                                 {product.image && (product.image.startsWith('http') || product.image.startsWith('/uploads/')) ? (
                                   <>
                                     <img 
-                                      src={product.image.startsWith('/uploads/') ? `http://localhost:5000${product.image}` : product.image} 
-                                      alt={product.name}
+                                     src={product.image.startsWith('/uploads/') ? `${API_BASE_URL.replace('/api', '')}${product.image}` : product.image}
                                       className="absolute inset-0 w-full h-full object-cover"
                                       onError={(e) => {
                                         e.target.onerror = null;
@@ -1505,8 +1504,7 @@ const addProduct = async (productData) => {
                                   {product.image && (product.image.startsWith('http') || product.image.startsWith('/uploads/')) ? (
                                     <>
                                       <img 
-                                        src={product.image.startsWith('/uploads/') ? `http://localhost:5000${product.image}` : product.image} 
-                                        alt={product.name}
+                                        src={product.image.startsWith('/uploads/') ? `${API_BASE_URL.replace('/api', '')}${product.image}` : product.image}
                                         className="absolute inset-0 w-full h-full object-cover"
                                         onError={(e) => {
                                           e.target.onerror = null;

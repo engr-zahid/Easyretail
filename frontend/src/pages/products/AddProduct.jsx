@@ -12,11 +12,11 @@ const AddProduct = () => {
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
-
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post("http://localhost:5000/api/products", form);
+      const res = await axios.post(`${API_BASE_URL}/products`, form);
       console.log("Product added:", res.data);
       alert("Product added successfully!");
     } catch (err) {

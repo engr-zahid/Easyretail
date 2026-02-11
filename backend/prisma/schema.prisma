@@ -1,107 +1,138 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  binaryTargets   = ["native", "linux-musl", "debian-openssl-3.0.x"]
+  previewFeatures = []
 }
 
 datasource db {
   provider = "postgresql"
-  
+
 }
 
 model Product {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   name        String
   description String?
   price       Float
   quantity    Int
   category    String?
   image       String?
-  status      String?
-  sales       Int      @default(0)
-  sku         String?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  status      String?   @default("active")
+  sales       Int       @default(0)
+  sku         String?   @unique
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   
   // Relations
   orderItems  OrderItem[]
   supplierId  String?
-  supplier    Supplier? @relation(fields: [supplierId], references: [id])
+  supplier    Supplier?  @relation(fields: [supplierId], references: [id], onDelete: SetNull)
 
   @@map("products")
+  @@index([category])
+  @@index([status])
+  @@index([createdAt])
 }
 
 model Customer {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   name        String
-  email       String   @unique
+  email       String    @unique
   phone       String?
   address     String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   avatar      String?
   joinedDate  DateTime? @default(now())
   lastActive  DateTime? @default(now())
   notes       String?
-  status      String?  @default("active")
-  totalOrders Int?     @default(0)
-  totalSpent  Float?   @default(0)
+  status      String?   @default("active")
+  totalOrders Int?      @default(0)
+  totalSpent  Float?    @default(0)
   
   // Relations
   orders      Order[]
 
   @@map("customers")
+  @@index([email])
+  @@index([status])
+  @@index([createdAt])
 }
 
 model Order {
-  id            String     @id @default(uuid())
-  orderNumber   String     @unique
+  id            String      @id @default(uuid())
+  orderNumber   String      @unique
   customerId    String?
-  customer      Customer?  @relation(fields: [customerId], references: [id])
+  customer      Customer?   @relation(fields: [customerId], references: [id], onDelete: SetNull)
   totalAmount   Float
-  status        String     @default("PENDING")
-  paymentMethod String     @default("CASH")
+  status        String      @default("PENDING")
+  paymentMethod String      @default("CASH")
   notes         String?
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
   
   // Relations
   orderItems    OrderItem[]
 
   @@map("orders")
+  @@index([orderNumber])
+  @@index([status])
+  @@index([customerId])
+  @@index([createdAt])
 }
 
 model OrderItem {
   id        String  @id @default(uuid())
   orderId   String
-  order     Order   @relation(fields: [orderId], references: [id])
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   productId String
-  product   Product @relation(fields: [productId], references: [id])
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
   quantity  Int
   price     Float
   subtotal  Float
 
   @@map("order_items")
+  @@index([orderId])
+  @@index([productId])
 }
 
 model Supplier {
-  id             String   @id @default(cuid())
+  id             String    @id @default(cuid())
   name           String
-  email          String?  @unique
+  email          String?   @unique
   phone          String?
   address        String?
   company        String?
-  status         String   @default("active")
+  status         String    @default("active")
   notes          String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
   
   // Statistics
-  totalOrders    Int?     @default(0)
-  totalRevenue   Float?   @default(0)
+  totalOrders    Int?      @default(0)
+  totalRevenue   Float?    @default(0)
   lastOrderDate  DateTime?
   
   // Relations
   products       Product[]
 
   @@map("suppliers")
+  @@index([email])
+  @@index([status])
+  @@index([createdAt])
 }
+
+// Optional: User model for authentication (if needed)
+// model User {
+//   id        String    @id @default(uuid())
+//   email     String    @unique
+//   password  String
+//   name      String?
+//   role      String    @default("user")
+//   isActive  Boolean   @default(true)
+//   createdAt DateTime  @default(now())
+//   updatedAt DateTime  @updatedAt
+//   
+//   @@map("users")
+// }

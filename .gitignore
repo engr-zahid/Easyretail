@@ -3,3 +3,14 @@ node_modules
 npm-debug.log
 .DS_Store
 .env
+
+# Environment files
+.env
+.env.production
+.env.local
+
+# Docker
+Dockerfile.backend
+Dockerfile.frontend
+docker-compose.yml
+nginx.conf

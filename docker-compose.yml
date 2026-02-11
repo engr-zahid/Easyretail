@@ -1,45 +1,50 @@
+version: '3.8'
+
 services:
-  # PostgreSQL Database
   postgres:
     image: postgres:16-alpine
-    container_name: easyretail-db
+    container_name: easyretail-db-dev
     environment:
       POSTGRES_USER: easyretail
       POSTGRES_PASSWORD: easyretail123
       POSTGRES_DB: easyretail_db
     ports:
-      - "5433:5432"  # Using 5433 on host to avoid conflict with local PostgreSQL
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U easyretail"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
     networks:
       - easyretail-network
 
-  # Shop Management Application
-  app:
+  backend:
     build:
       context: .
-      dockerfile: Dockerfile
-    container_name: easyretail-app
+      dockerfile: Dockerfile.backend
+    container_name: easyretail-backend-dev
     ports:
       - "5000:5000"
     environment:
-      NODE_ENV: production
-      PORT: 5000
-      DATABASE_URL: postgresql://easyretail:easyretail123@postgres:5432/easyretail_db?schema=public
-    depends_on:
-      postgres:
-        condition: service_healthy
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://easyretail:easyretail123@postgres:5432/easyretail_db
     volumes:
-      # Persist uploads directory
-      - ./Easyretail/backend/uploads:/app/backend/uploads
+      - ./backend:/app
+      - ./backend/uploads:/app/uploads
+    depends_on:
+      - postgres
     networks:
       - easyretail-network
-    restart: unless-stopped
+    command: sh -c "npx prisma migrate deploy && npm run dev"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: easyretail-frontend-dev
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - easyretail-network
 
 networks:
   easyretail-network:
