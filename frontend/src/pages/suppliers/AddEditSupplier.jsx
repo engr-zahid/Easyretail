@@ -1,10 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { 
-  getSupplier, 
-  createSupplier, 
-  updateSupplier 
-} from '../../utils/api';
+import { supplierAPI } from '../../utils/api';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Loader from '../../components/common/Loader';
@@ -37,7 +33,7 @@ const AddEditSupplier = () => {
   const fetchSupplier = async () => {
     try {
       setLoading(true);
-      const response = await getSupplier(id);
+      const response = await supplierAPI.getById(id);
       setFormData(response.data);
       setError('');
     } catch (error) {
@@ -81,9 +77,9 @@ const AddEditSupplier = () => {
       setError('');
       
       if (isEditMode) {
-        await updateSupplier(id, formData);
+        await supplierAPI.update(id, formData);
       } else {
-        await createSupplier(formData);
+        await supplierAPI.create(formData);
       }
       
       navigate('/suppliers');
@@ -102,7 +98,6 @@ const AddEditSupplier = () => {
       [name]: value
     }));
     
-    // Clear error for this field when user starts typing
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,

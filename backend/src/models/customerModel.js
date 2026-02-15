@@ -1,5 +1,4 @@
 const prisma = require('../../config/prisma');
-// const prisma = require('../utils/prisma');
 
 const customerModel = {
   async findAll() {
@@ -75,6 +74,7 @@ const customerModel = {
     });
   },
 
+  // SEARCH METHOD ADDED HERE
   async search(query) {
     return await prisma.customer.findMany({
       where: {

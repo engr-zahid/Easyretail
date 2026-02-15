@@ -1,12 +1,11 @@
 const customerService = require('../services/customerService');
-const orderService = require('../services/orderService'); // Add this import
 
 const customerController = {
   async getCustomers(req, res) {
     console.log('getCustomers called');
     try {
       const customers = await customerService.getAllCustomers();
-      console.log('Customers fetched:', customers);
+      console.log('Customers fetched:', customers.length);
       res.json({
         success: true,
         data: customers
@@ -19,19 +18,12 @@ const customerController = {
 
   async getCustomer(req, res) {
     try {
-      const customer = await customerService.getCustomerById(req.params.id);
-      
-      // Get customer's order history
-      const orders = await orderService.getCustomerOrders(req.params.id);
-      
-      const response = {
-        ...customer,
-        orders: orders || []
-      };
+      // here i Use service method that combines customer with orders
+      const customerWithOrders = await customerService.getCustomerWithOrders(req.params.id);
       
       res.json({
         success: true,
-        data: response
+        data: customerWithOrders
       });
     } catch (error) {
       console.error('Error fetching customer:', error);
@@ -46,7 +38,7 @@ const customerController = {
     console.log('createCustomer called with data:', req.body);
     try {
       const customer = await customerService.createCustomer(req.body);
-      console.log('Customer created:', customer);
+      console.log('Customer created:', customer.id);
       res.status(201).json({
         success: true,
         data: customer,
@@ -91,30 +83,34 @@ const customerController = {
     }
   },
 
-  // ============================================
-  // NEW: Get customer analytics
-  // ============================================
+  async searchCustomers(req, res) {
+    try {
+      const { q } = req.query;
+      if (!q) {
+        return res.status(400).json({
+          success: false,
+          error: 'Search query is required'
+        });
+      }
+      const customers = await customerService.searchCustomers(q);
+      res.json({
+        success: true,
+        data: customers,
+        count: customers.length
+      });
+    } catch (error) {
+      console.error('Error searching customers:', error);
+      res.status(500).json({ 
+        success: false,
+        error: 'Failed to search customers' 
+      });
+    }
+  },
+
+  // Get customer analytics
   async getCustomerAnalytics(req, res) {
     try {
-      const customers = await customerService.getAllCustomers();
-      
-      const analytics = {
-        totalCustomers: customers.length,
-        activeCustomers: customers.filter(c => c.status === 'active').length,
-        totalRevenue: customers.reduce((sum, c) => sum + parseFloat(c.totalSpent || 0), 0),
-        averageOrderValue: customers.length > 0 
-          ? customers.reduce((sum, c) => sum + parseFloat(c.totalSpent || 0), 0) / customers.length
-          : 0,
-        topCustomers: customers
-          .sort((a, b) => parseFloat(b.totalSpent || 0) - parseFloat(a.totalSpent || 0))
-          .slice(0, 10)
-          .map(c => ({
-            id: c.id,
-            name: c.name,
-            totalSpent: parseFloat(c.totalSpent || 0),
-            totalOrders: c.totalOrders || 0
-          }))
-      };
+      const analytics = await customerService.getCustomerAnalytics();
       
       res.json({
         success: true,
@@ -122,6 +118,24 @@ const customerController = {
       });
     } catch (error) {
       console.error('Error in getCustomerAnalytics:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message
+      });
+    }
+  },
+
+  // Get customer stats
+  async getCustomerStats(req, res) {
+    try {
+      const stats = await customerService.getCustomerStats();
+      
+      res.json({
+        success: true,
+        data: stats
+      });
+    } catch (error) {
+      console.error('Error in getCustomerStats:', error);
       res.status(500).json({
         success: false,
         error: error.message

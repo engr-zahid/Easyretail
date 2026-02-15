@@ -1,4 +1,3 @@
-// src/models/orderModel.js
 const prisma = require('../../config/prisma');
 
 const orderModel = {
@@ -26,6 +25,26 @@ const orderModel = {
     }
   },
 
+  async getOrderById(id) {
+    try {
+      const order = await prisma.order.findUnique({
+        where: { id },
+        include: {
+          customer: true,
+          orderItems: {
+            include: {
+              product: true
+            }
+          }
+        }
+      });
+      return order;
+    } catch (error) {
+      console.error('Error in getOrderById:', error);
+      throw error;
+    }
+  },
+
   async createOrder(orderData) {
     try {
       console.log('🔄 Creating order in database...');
@@ -44,26 +63,7 @@ const orderModel = {
       // Generate order number
       const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
 
-      // ============================================
-      // 1. GET PRODUCTS TO CHECK SUPPLIERS
-      // ============================================
-      const productIds = orderData.items.map(item => item.productId);
-      const products = await prisma.product.findMany({
-        where: {
-          id: {
-            in: productIds
-          }
-        },
-        include: {
-          // Assuming we have supplier relation in Product model
-          // If not, we need to add it to schema.prisma
-          // supplier: true
-        }
-      });
-
-      // ============================================
-      // 2. CREATE ORDER
-      // ============================================
+      // Create order
       const order = await prisma.order.create({
         data: {
           orderNumber,
@@ -96,9 +96,7 @@ const orderModel = {
       console.log('Order Number:', order.orderNumber);
       console.log('Total:', order.totalAmount);
 
-      // ============================================
-      // 3. UPDATE CUSTOMER STATISTICS
-      // ============================================
+      // Update customer statistics
       if (orderData.customerId) {
         try {
           // Get current customer
@@ -124,9 +122,7 @@ const orderModel = {
         }
       }
 
-      // ============================================
-      // 4. UPDATE PRODUCT STATISTICS
-      // ============================================
+      // Update product statistics
       try {
         for (const item of orderData.items) {
           // Update product stock and sales
@@ -150,51 +146,7 @@ const orderModel = {
         // Continue even if product updates fail
       }
 
-      // ============================================
-      // 5. UPDATE SUPPLIER STATISTICS (if we have supplier relation)
-      // ============================================
-      // Note: This requires adding supplierId to Product model
-      // If you have suppliers in your schema, uncomment and adapt this section:
-      /*
-      try {
-        // Get unique supplier IDs from products
-        const supplierIds = [...new Set(products.map(p => p.supplierId).filter(id => id))];
-        
-        for (const supplierId of supplierIds) {
-          // Calculate total from this supplier
-          const supplierProducts = products.filter(p => p.supplierId === supplierId);
-          const supplierTotal = orderData.items
-            .filter(item => supplierProducts.some(p => p.id === item.productId))
-            .reduce((sum, item) => sum + (item.price * item.quantity), 0);
-          
-          // Update supplier stats
-          await prisma.supplier.update({
-            where: { id: supplierId },
-            data: {
-              totalOrders: { increment: 1 },
-              totalRevenue: { increment: supplierTotal },
-              lastOrderDate: new Date()
-            }
-          });
-        }
-      } catch (supplierError) {
-        console.error('⚠️ Error updating supplier statistics:', supplierError);
-      }
-      */
-
-      return {
-        id: order.id,
-        orderNumber: order.orderNumber,
-        customerId: order.customerId,
-        customer: order.customer,
-        totalAmount: order.totalAmount,
-        status: order.status,
-        paymentMethod: order.paymentMethod,
-        notes: order.notes,
-        createdAt: order.createdAt,
-        updatedAt: order.updatedAt,
-        orderItems: order.orderItems
-      };
+      return order;
 
     } catch (error) {
       console.error('❌ Error creating order:', error);
@@ -222,9 +174,7 @@ const orderModel = {
       });
 
       if (order) {
-        // ============================================
-        // 1. RESTORE CUSTOMER STATISTICS
-        // ============================================
+        // Restore customer statistics
         if (order.customerId) {
           try {
             const customer = await prisma.customer.findUnique({
@@ -246,9 +196,7 @@ const orderModel = {
           }
         }
 
-        // ============================================
-        // 2. RESTORE PRODUCT STOCK & SALES
-        // ============================================
+        // Restore product stock & sales
         for (const item of order.orderItems) {
           try {
             await prisma.product.update({
@@ -267,11 +215,6 @@ const orderModel = {
             console.error(`⚠️ Error restoring product ${item.productId}:`, productError);
           }
         }
-
-        // ============================================
-        // 3. RESTORE SUPPLIER STATISTICS (if applicable)
-        // ============================================
-        // Similar logic as create but reversed
       }
 
       // Delete order items first
@@ -370,9 +313,7 @@ const orderModel = {
     }
   },
 
-  // ============================================
-  // NEW: Get orders by customer ID
-  // ============================================
+  // Get orders by customer ID
   async getOrdersByCustomer(customerId) {
     try {
       const orders = await prisma.order.findMany({
@@ -395,9 +336,7 @@ const orderModel = {
     }
   },
 
-  // ============================================
-  // NEW: Get recent orders summary
-  // ============================================
+  // Get recent orders summary
   async getRecentOrdersSummary(limit = 10) {
     try {
       const orders = await prisma.order.findMany({

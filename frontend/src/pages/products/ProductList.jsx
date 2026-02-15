@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect, useRef } from 'react';
-import axios from 'axios'; // Added axios for API calls
+import axios from 'axios';
 import { 
   Plus, 
   Search, 
@@ -27,8 +26,6 @@ import {
   Loader2,
   ShoppingBag
 } from 'lucide-react';
-// Removed useProducts context since we're using backend API
-// import { useProducts } from "../../context/ProductsContext";
 
 const ProductList = () => {
   const [search, setSearch] = useState('');
@@ -48,88 +45,156 @@ const ProductList = () => {
   const [isDarkMode, setIsDarkMode] = useState(() => {
     return localStorage.getItem('darkMode') === 'true';
   });
-  const [isLoading, setIsLoading] = useState(true); // Added loading state
-  const [isProcessing, setIsProcessing] = useState(false); // Added processing state
+  const [isLoading, setIsLoading] = useState(true);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [fetchError, setFetchError] = useState(null);
   
   const addButtonRef = useRef(null);
   const addModalButtonRef = useRef(null);
   const editModalButtonRef = useRef(null);
   const deleteButtonRefs = useRef({});
   
-  // Products state - now fetched from backend
   const [products, setProducts] = useState([]);
   
-  // API base URL
-  const API_BASE_URL = 'http://localhost:5000/api';
+  // Use relative paths for production - FIXED
+  // Remove all axios.defaults.baseURL configuration
+  
   const fetchProducts = async () => {
     try {
       setIsLoading(true);
-      console.log('Fetching products from:', `${API_BASE_URL}/products`);
+      setFetchError(null);
+      console.log('Fetching products from:', '/api/products');
 
-      const res = await axios.get(`${API_BASE_URL}/products`);
+      const res = await axios.get('/api/products', {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        timeout: 10000
+      });
 
-      console.log('Response received:', res.data);
+      console.log('Full response:', res);
 
-      if (res.data && res.data.success && Array.isArray(res.data.products)) {
-        // Use the products array from response
-        const productsArray = res.data.products;
-        const transformedProducts = productsArray.map(product => {
-          // Validate and transform each product
-          const transformed = {
-            id: product.id || `temp-${Date.now()}-${Math.random()}`,
-            name: product.name || 'Unnamed Product',
-            category: product.category || 'Clothing',
-            price: parseFloat(product.price) || 0,
-            stock: product.stock || product.quantity || 0,
-            quantity: product.quantity || product.stock || 0,
-            status: product.status || calculateStockStatus(product.stock || product.quantity || 0),
-            sales: product.sales || 0,
-            image: product.image || '📦',
-            description: product.description || '',
-            sku: product.sku || `SKU-${Date.now()}`,
-            isActive: product.isActive !== undefined ? product.isActive : true,
-            createdAt: product.createdAt || new Date().toISOString(),
-            updatedAt: product.updatedAt || new Date().toISOString()
-          };
-
-          // Ensure image is a valid string
-          if (typeof transformed.image !== 'string') {
-            transformed.image = '📦';
-          }
-
-          return transformed;
-        });
-
-        setProducts(transformedProducts);
-        console.log('Products loaded successfully:', transformedProducts.length);
+      let productsArray = [];
+      
+      if (Array.isArray(res.data)) {
+        productsArray = res.data;
+      } else if (res.data && res.data.success && Array.isArray(res.data.products)) {
+        productsArray = res.data.products;
+      } else if (res.data && res.data.products) {
+        productsArray = res.data.products;
       } else {
-        console.warn('API returned invalid response structure:', res.data);
-        setProducts([]);
+        console.warn('Unexpected response structure, trying test endpoint');
+        return await fetchTestProducts();
       }
+
+      const transformedProducts = productsArray.map(product => {
+        const stock = product.stock || product.quantity || 0;
+        return {
+          id: product.id || `prod-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          name: product.name || 'Unnamed Product',
+          category: product.category || 'Clothing',
+          price: parseFloat(product.price) || 0,
+          stock: stock,
+          quantity: stock,
+          status: product.status || calculateStockStatus(stock),
+          sales: product.sales || 0,
+          image: product.image || '📦',
+          description: product.description || '',
+          sku: product.sku || `SKU-${Date.now()}`,
+          isActive: product.isActive !== undefined ? product.isActive : true,
+          createdAt: product.createdAt || new Date().toISOString(),
+          updatedAt: product.updatedAt || new Date().toISOString()
+        };
+      });
+
+      setProducts(transformedProducts);
+      console.log('Products loaded successfully:', transformedProducts.length);
+      setFetchError(null);
+
     } catch (err) {
       console.error("Error fetching products:", err);
-
-      // Show user-friendly error message
-      if (err.code === 'ERR_NETWORK') {
-        console.error('Network error - backend server may not be running');
-      } else if (err.response?.status === 500) {
-        console.error('Server error - check backend database connection');
-      } else if (err.response?.status === 404) {
-        console.error('API endpoint not found');
-      }
-
-      // Keep existing products if fetch fails (don't clear the list)
-      console.log('Keeping existing products due to fetch error');
+      setFetchError(err.message || 'Failed to fetch products');
+      
+      await fetchTestProducts();
+      
     } finally {
       setIsLoading(false);
     }
   };
-  // Initialize products on component mount
+
+  const fetchTestProducts = async () => {
+    try {
+      console.log('Trying test endpoint:', '/api/products/test-products');
+      const res = await axios.get('/api/products/test-products');
+      
+      if (res.data && res.data.products) {
+        const transformedProducts = res.data.products.map(product => ({
+          id: product.id || `test-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+          name: product.name || 'Test Product',
+          category: product.category || 'Clothing',
+          price: parseFloat(product.price) || 0,
+          stock: product.quantity || product.stock || 0,
+          quantity: product.quantity || product.stock || 0,
+          status: product.status || calculateStockStatus(product.quantity || product.stock || 0),
+          sales: product.sales || 0,
+          image: product.image || '📦',
+          description: product.description || 'Test product from fallback endpoint',
+          sku: product.sku || `TEST-${Date.now()}`,
+          isActive: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }));
+        
+        setProducts(transformedProducts);
+        console.log('Loaded test products:', transformedProducts.length);
+      }
+    } catch (err) {
+      console.error('Failed to load test products:', err);
+      setProducts(getMockProducts());
+    }
+  };
+
+  const getMockProducts = () => {
+    return [
+      {
+        id: 'mock-1',
+        name: 'Demo T-Shirt',
+        category: 'Clothing',
+        price: 24.99,
+        stock: 50,
+        quantity: 50,
+        status: 'in-stock',
+        sales: 120,
+        image: '👕',
+        description: 'Comfortable cotton t-shirt',
+        sku: 'TSHIRT-001',
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      },
+      {
+        id: 'mock-2',
+        name: 'Wireless Headphones',
+        category: 'Electronics',
+        price: 149.99,
+        stock: 5,
+        quantity: 5,
+        status: 'low-stock',
+        sales: 85,
+        image: '🎧',
+        description: 'Noise-cancelling headphones',
+        sku: 'HP-001',
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
+    ];
+  };
+
   useEffect(() => {
     fetchProducts();
   }, []);
   
-  // New product state
   const [newProduct, setNewProduct] = useState({
     name: '',
     category: 'Clothing',
@@ -142,7 +207,6 @@ const ProductList = () => {
     imagePreview: null
   });
 
-  // Listen for theme changes from Navbar
   useEffect(() => {
     const handleThemeChange = (event) => {
       setIsDarkMode(event.detail);
@@ -163,7 +227,6 @@ const ProductList = () => {
     }
   }, [products]);
 
-  // Cleanup blob URLs to prevent memory leaks
   useEffect(() => {
     return () => {
       if (newProduct.imagePreview && newProduct.imagePreview.startsWith('blob:')) {
@@ -172,7 +235,6 @@ const ProductList = () => {
     };
   }, [newProduct.imagePreview]);
 
-  // Function to calculate stock status based on stock quantity
   const calculateStockStatus = (stock) => {
     const stockNum = parseInt(stock) || 0;
     if (stockNum === 0) return 'out-of-stock';
@@ -180,7 +242,6 @@ const ProductList = () => {
     return 'in-stock';
   };
 
-  // Categories with updated counts based on actual products
   const categories = [
     { name: 'All Categories', count: products.length, gradient: 'from-orange-400 via-amber-400 to-yellow-400', icon: '📊', darkGradient: 'from-orange-500 via-amber-500 to-yellow-500' },
     { name: 'Clothing', count: products.filter(p => p.category === 'Clothing').length, gradient: 'from-rose-400 via-pink-400 to-red-400', icon: '👕', darkGradient: 'from-rose-500 via-pink-500 to-red-500' },
@@ -190,12 +251,9 @@ const ProductList = () => {
     { name: 'Fitness', count: products.filter(p => p.category === 'Fitness').length, gradient: 'from-red-400 via-rose-400 to-pink-400', icon: '🏋️', darkGradient: 'from-red-500 via-rose-500 to-pink-500' },
   ];
 
-  // Calculate status stats based on actual products - FIXED COMPLETELY
   const calculateStatusStats = () => {
-    // Recalculate status for all products to ensure accuracy
     const productsWithCorrectedStatus = products.map(product => ({
       ...product,
-      // Ensure status matches current stock
       status: calculateStockStatus(product.stock || product.quantity || 0)
     }));
 
@@ -240,7 +298,6 @@ const ProductList = () => {
     
     const matchesCategory = categoryFilter === 'All Categories' || product.category === categoryFilter;
     
-    // FIXED: Use recalculated status for filtering to match the inventory status
     const currentProductStatus = calculateStockStatus(product.stock || product.quantity || 0);
     const matchesStatus = statusFilter === 'All Status' || 
                          currentProductStatus === statusFilter.toLowerCase().replace(' ', '-');
@@ -248,7 +305,6 @@ const ProductList = () => {
     return matchesSearch && matchesCategory && matchesStatus;
   });
 
-  // Animated Add Product button handler
   const handleAddButtonClick = () => {
     if (addButtonRef.current) {
       addButtonRef.current.classList.add('animate-pulse-once');
@@ -259,7 +315,6 @@ const ProductList = () => {
       }, 500);
     }
     
-    // Add warm sparkle effect
     setIsAddingProduct(true);
     setTimeout(() => {
       setIsAddingProduct(false);
@@ -267,7 +322,6 @@ const ProductList = () => {
     }, 300);
   };
 
-  // Animated Add Product in modal handler
   const handleAddProductClick = () => {
     if (addModalButtonRef.current) {
       addModalButtonRef.current.classList.add('animate-pulse-once');
@@ -281,7 +335,6 @@ const ProductList = () => {
     handleAddProduct();
   };
 
-  // Animated Edit Product in modal handler
   const handleEditProductClick = () => {
     if (editModalButtonRef.current) {
       editModalButtonRef.current.classList.add('animate-pulse-once');
@@ -295,161 +348,157 @@ const ProductList = () => {
     handleEditProduct();
   };
 
-  // Add product to backend
-const addProduct = async (productData) => {
-  try {
-    setIsProcessing(true);
+  const addProduct = async (productData) => {
+    try {
+      setIsProcessing(true);
 
-    let requestData;
-    let headers = {};
+      let requestData;
+      let headers = {};
 
-    // Check if we have an image file to upload
-    if (productData.imageFile) {
-      // Use FormData for file upload
-      requestData = new FormData();
-      requestData.append('name', productData.name);
-      requestData.append('category', productData.category);
-      requestData.append('price', parseFloat(productData.price) || 0);
-      requestData.append('stock', parseInt(productData.stock) || 0);
-      requestData.append('description', productData.description || '');
-      requestData.append('sales', productData.sales || 0);
-      requestData.append('status', productData.status || 'in-stock');
-      requestData.append('image', productData.imageFile); // File object
+      if (productData.imageFile) {
+        requestData = new FormData();
+        requestData.append('name', productData.name);
+        requestData.append('category', productData.category);
+        requestData.append('price', parseFloat(productData.price) || 0);
+        requestData.append('stock', parseInt(productData.stock) || 0);
+        requestData.append('description', productData.description || '');
+        requestData.append('sales', productData.sales || 0);
+        requestData.append('status', productData.status || 'in-stock');
+        requestData.append('image', productData.imageFile);
 
-      console.log('Sending product data with file:', {
-        name: productData.name,
-        category: productData.category,
-        hasImage: !!productData.imageFile
-      });
-    } else {
-      // Use JSON for text-only data
-      requestData = {
-        name: productData.name,
-        category: productData.category,
-        price: parseFloat(productData.price) || 0,
-        quantity: parseInt(productData.stock) || 0,
-        description: productData.description || '',
-        image: productData.image || '📦',
-        sales: productData.sales || 0,
-        status: productData.status || 'in-stock'
+        console.log('Sending product data with file:', {
+          name: productData.name,
+          category: productData.category,
+          hasImage: !!productData.imageFile
+        });
+      } else {
+        requestData = {
+          name: productData.name,
+          category: productData.category,
+          price: parseFloat(productData.price) || 0,
+          quantity: parseInt(productData.stock) || 0,
+          description: productData.description || '',
+          image: productData.image || '📦',
+          sales: productData.sales || 0,
+          status: productData.status || 'in-stock'
+        };
+        headers['Content-Type'] = 'application/json';
+
+        console.log('Sending product data (no file):', requestData);
+      }
+
+      const response = await axios.post('/api/products', requestData, { headers });
+
+      console.log('Product added response:', response.data);
+
+      if (response.data && response.data.success) {
+        await fetchProducts();
+        return {
+          success: true,
+          product: response.data.product,
+          message: 'Product added successfully'
+        };
+      } else {
+        throw new Error(response.data?.message || 'Failed to add product');
+      }
+    } catch (err) {
+      console.error("Error adding product:", err.response?.data || err.message);
+
+      console.log('Adding product to local state as fallback');
+      const newId = `local-${Date.now()}`;
+      const newProduct = {
+        ...productData,
+        id: newId,
+        sales: 0,
+        status: calculateStockStatus(productData.stock || 0),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        image: productData.imageFile ? '📦' : (productData.image || '📦')
       };
-      headers['Content-Type'] = 'application/json';
 
-      console.log('Sending product data (no file):', requestData);
-    }
+      setProducts(prev => [...prev, newProduct]);
 
-    const response = await axios.post(`${API_BASE_URL}/products`, requestData, { headers });
-
-    console.log('Product added response:', response.data);
-
-    if (response.data && response.data.success) {
-      await fetchProducts(); // Refresh list
       return {
         success: true,
-        product: response.data.product,
-        message: 'Product added successfully'
+        product: newProduct,
+        message: 'Product added locally (backend offline)',
+        isLocal: true
       };
-    } else {
-      throw new Error(response.data?.message || 'Failed to add product');
+    } finally {
+      setIsProcessing(false);
     }
-  } catch (err) {
-    console.error("Error adding product:", err.response?.data || err.message);
+  };
 
-    // Fallback: Add to local state if backend fails
-    console.log('Adding product to local state as fallback');
-    const newId = `local-${Date.now()}`;
-    const newProduct = {
-      ...productData,
-      id: newId,
-      sales: 0,
-      status: calculateStockStatus(productData.stock || 0),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      // Ensure image is properly set
-      image: productData.imageFile ? '📦' : (productData.image || '📦')
-    };
-
-
-    return {
-      success: true,
-      product: newProduct,
-      message: 'Product added locally (backend offline)',
-      isLocal: true
-    };
-  } finally {
-    setIsProcessing(false);
-  }
-};
-
-  // Update product in backend - UPDATED
   const updateProduct = async (productId, productData) => {
     try {
       setIsProcessing(true);
-      // Prepare data for backend
       const backendProduct = {
         name: productData.name,
         category: productData.category,
         price: parseFloat(productData.price) || 0,
         stock: parseInt(productData.stock) || 0,
-        quantity: parseInt(productData.stock) || 0, // Send both stock and quantity
+        quantity: parseInt(productData.stock) || 0,
         description: productData.description || '',
         image: productData.image || '📦'
       };
       
-      const response = await axios.put(`${API_BASE_URL}/products/${productId}`, backendProduct);
+      const response = await axios.put(`/api/products/${productId}`, backendProduct);
       
-      // Refresh products list
       await fetchProducts();
       
       return response.data;
     } catch (err) {
       console.error("Error updating product:", err);
+      const updatedProducts = products.map(p => 
+        p.id === productId ? { ...p, ...backendProduct } : p
+      );
+      setProducts(updatedProducts);
       throw err;
     } finally {
       setIsProcessing(false);
     }
   };
 
-  // Delete product from backend - UPDATED
   const deleteProduct = async (productId) => {
     try {
       setIsProcessing(true);
-      await axios.delete(`${API_BASE_URL}/products/${productId}`);
+      await axios.delete(`/api/products/${productId}`);
       
-      // Refresh products list
       await fetchProducts();
       
       return true;
     } catch (err) {
       console.error("Error deleting product:", err);
+      setProducts(prev => prev.filter(p => p.id !== productId));
       throw err;
     } finally {
       setIsProcessing(false);
     }
   };
 
-  // Clear all products from backend - UPDATED
   const clearAllProducts = async () => {
     try {
       setIsProcessing(true);
-      // Delete all products one by one (or implement bulk delete on backend)
-      for (const product of products) {
-        await axios.delete(`${API_BASE_URL}/products/${product.id}`);
+      try {
+        for (const product of products) {
+          await axios.delete(`/api/products/${product.id}`);
+        }
+      } catch (error) {
+        console.log('Backend clear failed, clearing local state only');
       }
       
-      // Refresh products list
-      await fetchProducts();
+      setProducts([]);
       
       return true;
     } catch (err) {
       console.error("Error clearing products:", err);
+      setProducts([]);
       throw err;
     } finally {
       setIsProcessing(false);
     }
   };
 
-  // Delete product function - Updated to show animation on confirm
   const handleDeleteProduct = async () => {
     setTrashAnimation(true);
     
@@ -458,7 +507,6 @@ const addProduct = async (productData) => {
         await deleteProduct(selectedProduct.id);
         setShowDeleteModal(false);
         setSelectedProduct(null);
-        // Update status stats after deletion
         setAnimateStats(true);
         setTimeout(() => setAnimateStats(false), 800);
       }
@@ -470,19 +518,16 @@ const addProduct = async (productData) => {
     }
   };
 
-  // Edit product function - FIXED COMPLETELY
   const handleEditProduct = async () => {
     if (selectedProduct) {
       try {
-        // Calculate status based on stock before updating
         const updatedProduct = {
           ...selectedProduct,
           price: parseFloat(selectedProduct.price) || 0,
           stock: parseInt(selectedProduct.stock) || 0,
-          status: calculateStockStatus(selectedProduct.stock) // Recalculate status
+          status: calculateStockStatus(selectedProduct.stock)
         };
         
-        // Call updateProduct with the corrected product
         await updateProduct(updatedProduct.id, updatedProduct);
         setShowEditModal(false);
         setSelectedProduct(null);
@@ -495,16 +540,13 @@ const addProduct = async (productData) => {
     }
   };
 
-  // Add new product function with success animation - FIXED
   const handleAddProduct = async () => {
     if (newProduct.name && newProduct.price && newProduct.stock) {
       try {
-        // Calculate status based on stock before adding
         const stockNum = parseInt(newProduct.stock) || 0;
         const priceNum = parseFloat(newProduct.price) || 0;
         const calculatedStatus = calculateStockStatus(stockNum);
         
-        // Generate a unique ID for the new product
         const newProductId = `PROD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
         
         const productToAdd = {
@@ -516,13 +558,12 @@ const addProduct = async (productData) => {
           status: calculatedStatus,
           description: newProduct.description,
           image: newProduct.image || '📦',
-          imageFile: newProduct.imageFile, // Include the file for upload
-          sales: Math.floor(Math.random() * 100) // Random sales for demo
+          imageFile: newProduct.imageFile,
+          sales: Math.floor(Math.random() * 100)
         };
         
         await addProduct(productToAdd);
         
-        // Show success animation
         setAddSuccessAnimation(true);
         setTimeout(() => setAddSuccessAnimation(false), 1500);
         
@@ -539,7 +580,6 @@ const addProduct = async (productData) => {
           imagePreview: null
         });
         
-        // Update status stats
         setAnimateStats(true);
         setTimeout(() => setAnimateStats(false), 800);
       } catch (error) {
@@ -551,15 +591,12 @@ const addProduct = async (productData) => {
     }
   };
 
-  // View product function
   const handleViewProduct = (product) => {
     setSelectedProduct(product);
     setShowViewModal(true);
   };
 
-  // Edit button click - FIXED
   const handleEditClick = (product) => {
-    // Create a copy of the product to avoid reference issues
     const productCopy = {
       ...product,
       price: typeof product.price === 'string' && product.price.includes('$') 
@@ -571,11 +608,9 @@ const addProduct = async (productData) => {
     setShowEditModal(true);
   };
 
-  // Delete button click with animation
   const handleDeleteClick = (product) => {
     setSelectedProduct(product);
     
-    // Trigger individual button animation (just shake)
     const buttonKey = product.id;
     if (deleteButtonRefs.current[buttonKey]) {
       deleteButtonRefs.current[buttonKey].classList.add('animate-shake');
@@ -586,11 +621,9 @@ const addProduct = async (productData) => {
       }, 500);
     }
     
-    // Show delete modal immediately without the falling animation
     setShowDeleteModal(true);
   };
 
-  // Export function
   const handleExport = () => {
     if (products.length === 0) {
       alert('No products to export!');
@@ -609,7 +642,6 @@ const addProduct = async (productData) => {
     URL.revokeObjectURL(url);
   };
 
-  // Clear all products function
   const handleClearAll = async () => {
     if (window.confirm('Are you sure you want to clear all products? This cannot be undone.')) {
       try {
@@ -627,7 +659,6 @@ const addProduct = async (productData) => {
     }
   };
 
-  // Reset filters function
   const handleResetFilters = () => {
     setSearch('');
     setCategoryFilter('All Categories');
@@ -635,7 +666,6 @@ const addProduct = async (productData) => {
     setCurrentPage(1);
   };
 
-  // Calculate average price
   const calculateAveragePrice = () => {
     if (products.length === 0) return '$0.00';
     
@@ -649,12 +679,10 @@ const addProduct = async (productData) => {
     return `$${(total / products.length).toFixed(2)}`;
   };
 
-  // Calculate total sales
   const calculateTotalSales = () => {
     return products.reduce((sum, product) => sum + (product.sales || 0), 0);
   };
 
-  // Handle input change for edit modal - FIXED
   const handleEditInputChange = (field, value) => {
     setSelectedProduct(prev => {
       const updatedProduct = {
@@ -662,7 +690,6 @@ const addProduct = async (productData) => {
         [field]: value
       };
       
-      // Automatically update status when stock changes
       if (field === 'stock') {
         updatedProduct.status = calculateStockStatus(value);
       }
@@ -671,7 +698,6 @@ const addProduct = async (productData) => {
     });
   };
 
-  // Handle input change for add modal
   const handleAddInputChange = (field, value) => {
     setNewProduct(prev => {
       const updatedProduct = {
@@ -679,7 +705,6 @@ const addProduct = async (productData) => {
         [field]: value
       };
       
-      // Automatically update status when stock changes
       if (field === 'stock') {
         updatedProduct.status = calculateStockStatus(value);
       }
@@ -688,58 +713,75 @@ const addProduct = async (productData) => {
     });
   };
 
-  // Handle image upload
   const handleImageUpload = (e, isEdit = false) => {
     const file = e.target.files[0];
     if (file) {
-      // Validate file size (5MB limit)
       if (file.size > 5 * 1024 * 1024) {
         alert('File size too large. Maximum size is 5MB.');
         return;
       }
 
-      // Validate file type
       if (!file.type.startsWith('image/')) {
         alert('Please select a valid image file.');
         return;
       }
 
-      // Store file for upload and preview
       if (isEdit && selectedProduct) {
         handleEditInputChange('imageFile', file);
-        // Create preview URL for display
-        const previewUrl = URL.createObjectURL(file);
+        const previewUrl = URL.revokeObjectURL(file);
         handleEditInputChange('imagePreview', previewUrl);
       } else {
         handleAddInputChange('imageFile', file);
-        // Create preview URL for display
-        const previewUrl = URL.createObjectURL(file);
+        const previewUrl = URL.revokeObjectURL(file);
         handleAddInputChange('imagePreview', previewUrl);
       }
     }
   };
 
-  // Calculate pagination
   const itemsPerPage = 5;
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage) || 1;
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedProducts = filteredProducts.slice(startIndex, startIndex + itemsPerPage);
 
-  // Get unique categories for filter dropdown
   const uniqueCategories = ['All Categories', ...new Set(products.map(p => p.category))];
 
-  // Get emoji from image with better validation
   const getEmojiFromImage = (image) => {
     if (!image || typeof image !== 'string') {
       return '📦';
     }
-    if (image.startsWith('/uploads/') || image.startsWith('http')) {
+    if (image.startsWith('/uploads/')) {
+      return '📦';
+    }
+    if (image.startsWith('http')) {
       return '📦';
     }
     return image;
   };
-
-  // Add CSS for custom animations with warm gradients and dark mode
+  
+  const getImageSrc = (image) => {
+    if (!image || typeof image !== 'string') {
+      return null;
+    }
+    
+    if (image.length <= 3 && !image.startsWith('http') && !image.startsWith('/')) {
+      return null;
+    }
+    
+    if (image.startsWith('/uploads/')) {
+      return image;
+    }
+    
+    if (image.startsWith('http')) {
+      return image;
+    }
+    
+    if (image.startsWith('data:image')) {
+      return image;
+    }
+    
+    return null;
+  };
+  
   const animationStyles = `
     @keyframes float {
       0%, 100% { transform: translateY(0px) rotate(0deg); }
@@ -1100,13 +1142,49 @@ const addProduct = async (productData) => {
     }
   `;
 
-  // Loading state
-  if (isLoading) {
+  if (isLoading && !fetchError) {
     return (
       <div className={`${isDarkMode ? 'warm-bg-dark' : 'warm-bg'} min-h-screen flex items-center justify-center`}>
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500 mx-auto mb-4"></div>
           <p className={`text-lg font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Loading products...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (fetchError && products.length === 0) {
+    return (
+      <div className={`${isDarkMode ? 'warm-bg-dark' : 'warm-bg'} min-h-screen flex items-center justify-center p-4`}>
+        <div className="text-center max-w-md">
+          <div className="text-amber-500 text-6xl mb-4">⚠️</div>
+          <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">Connection Issue</h3>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
+            Unable to connect to the backend server.
+          </p>
+          <p className="text-sm text-gray-500 dark:text-gray-500 mb-2">
+            Error: {fetchError}
+          </p>
+          <p className="text-sm text-gray-500 dark:text-gray-500 mb-6">
+            Showing demo data. Some features may be limited.
+          </p>
+          <div className="space-y-3">
+            <button
+              onClick={fetchProducts}
+              className="px-6 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-medium w-full"
+            >
+              Retry Connection
+            </button>
+            <button
+              onClick={() => {
+                setProducts(getMockProducts());
+                setFetchError(null);
+              }}
+              className="px-6 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-lg font-medium w-full"
+            >
+              Continue with Demo Data
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -1160,7 +1238,7 @@ const addProduct = async (productData) => {
           </div>
         )}
         
-        {/* Delete animation overlay - Now shows when confirming delete */}
+        {/* Delete animation overlay */}
         {deleteAnimation && selectedProduct && (
           <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
             <div className="relative">
@@ -1373,100 +1451,103 @@ const addProduct = async (productData) => {
 
                     {/* Mobile Card View for Small Screens */}
                     <div className="lg:hidden space-y-2 p-3 sm:p-4">
-                      {paginatedProducts.map((product) => (
-                        <div key={product.id} className={`rounded-lg border p-3 sm:p-4 hover:shadow-md transition-shadow ${isDarkMode ? 'bg-gray-800 border-gray-700 hover:shadow-gray-900' : 'bg-white border-gray-200'}`}>
-                          <div className="flex items-start justify-between mb-3">
-                            <div className="flex items-start gap-3">
-                              <div className="relative h-10 w-10 sm:h-12 sm:w-12 rounded-lg overflow-hidden flex-shrink-0">
-                                {product.image && (product.image.startsWith('http') || product.image.startsWith('/uploads/')) ? (
-                                  <>
-                                    <img 
-                                      src={product.image.startsWith('/uploads/') ? `http://localhost:5000${product.image}` : product.image} 
-                                      alt={product.name}
-                                      className="absolute inset-0 w-full h-full object-cover"
-                                      onError={(e) => {
-                                        e.target.onerror = null;
-                                        e.target.style.display = 'none';
-                                        e.target.nextSibling.style.display = 'flex';
-                                      }}
-                                    />
-                                    <div className="absolute inset-0 flex items-center justify-center text-lg" style={{display: 'none'}}>
+                      {paginatedProducts.map((product) => {
+                        const imageSrc = getImageSrc(product.image);
+                        return (
+                          <div key={product.id} className={`rounded-lg border p-3 sm:p-4 hover:shadow-md transition-shadow ${isDarkMode ? 'bg-gray-800 border-gray-700 hover:shadow-gray-900' : 'bg-white border-gray-200'}`}>
+                            <div className="flex items-start justify-between mb-3">
+                              <div className="flex items-start gap-3">
+                                <div className="relative h-10 w-10 sm:h-12 sm:w-12 rounded-lg overflow-hidden flex-shrink-0">
+                                  {imageSrc ? (
+                                    <>
+                                      <img 
+                                        src={imageSrc} 
+                                        alt={product.name}
+                                        className="absolute inset-0 w-full h-full object-cover"
+                                        onError={(e) => {
+                                          e.target.onerror = null;
+                                          e.target.style.display = 'none';
+                                          e.target.nextSibling.style.display = 'flex';
+                                        }}
+                                      />
+                                      <div className="absolute inset-0 flex items-center justify-center text-lg bg-gray-100 dark:bg-gray-700" style={{display: 'none'}}>
+                                        {getEmojiFromImage(product.image)}
+                                      </div>
+                                    </>
+                                  ) : (
+                                    <div className="absolute inset-0 flex items-center justify-center text-lg bg-gray-100 dark:bg-gray-700">
                                       {getEmojiFromImage(product.image)}
                                     </div>
-                                  </>
-                                ) : (
-                                  <div className="absolute inset-0 flex items-center justify-center text-lg">
-                                    {getEmojiFromImage(product.image)}
+                                  )}
+                                </div>
+                                <div className="min-w-0">
+                                  <h3 className={`font-medium text-sm sm:text-base truncate ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{product.name}</h3>
+                                  <p className={`text-xs truncate ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{product.id}</p>
+                                  
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <span className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>{product.category}</span>
+                                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
+                                      calculateStockStatus(product.stock || product.quantity || 0) === 'in-stock' ? (isDarkMode ? 'bg-emerald-900/30 text-emerald-300' : 'bg-emerald-50 text-emerald-700') :
+                                      calculateStockStatus(product.stock || product.quantity || 0) === 'low-stock' ? (isDarkMode ? 'bg-amber-900/30 text-amber-300' : 'bg-amber-50 text-amber-700') :
+                                      (isDarkMode ? 'bg-red-900/30 text-red-300' : 'bg-red-50 text-red-700')
+                                    }`}>
+                                      {calculateStockStatus(product.stock || product.quantity || 0) === 'in-stock' ? 'In Stock' : 
+                                       calculateStockStatus(product.stock || product.quantity || 0) === 'low-stock' ? 'Low Stock' : 'Out of Stock'}
+                                    </span>
                                   </div>
-                                )}
-                              </div>
-                              <div className="min-w-0">
-                                <h3 className={`font-medium text-sm sm:text-base truncate ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{product.name}</h3>
-                                <p className={`text-xs truncate ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{product.id}</p>
-                                
-                                <div className="flex items-center gap-2 mt-1">
-                                  <span className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>{product.category}</span>
-                                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
-                                    calculateStockStatus(product.stock || product.quantity || 0) === 'in-stock' ? (isDarkMode ? 'bg-emerald-900/30 text-emerald-300' : 'bg-emerald-50 text-emerald-700') :
-                                    calculateStockStatus(product.stock || product.quantity || 0) === 'low-stock' ? (isDarkMode ? 'bg-amber-900/30 text-amber-300' : 'bg-amber-50 text-amber-700') :
-                                    (isDarkMode ? 'bg-red-900/30 text-red-300' : 'bg-red-50 text-red-700')
-                                  }`}>
-                                    {calculateStockStatus(product.stock || product.quantity || 0) === 'in-stock' ? 'In Stock' : 
-                                     calculateStockStatus(product.stock || product.quantity || 0) === 'low-stock' ? 'Low Stock' : 'Out of Stock'}
-                                  </span>
                                 </div>
                               </div>
                             </div>
-                          </div>
-                          
-                          <div className="grid grid-cols-2 gap-2 mb-3">
-                            <div className={`text-center p-2 rounded ${isDarkMode ? 'bg-gray-700/50' : 'bg-gray-50'}`}>
-                              <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Price</div>
-                              <div className={`font-semibold text-sm ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
-                                ${typeof product.price === 'number' ? product.price.toFixed(2) : product.price}
+                            
+                            <div className="grid grid-cols-2 gap-2 mb-3">
+                              <div className={`text-center p-2 rounded ${isDarkMode ? 'bg-gray-700/50' : 'bg-gray-50'}`}>
+                                <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Price</div>
+                                <div className={`font-semibold text-sm ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+                                  ${typeof product.price === 'number' ? product.price.toFixed(2) : product.price}
+                                </div>
+                              </div>
+                              <div className={`text-center p-2 rounded ${isDarkMode ? 'bg-gray-700/50' : 'bg-gray-50'}`}>
+                                <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Stock</div>
+                                <div className={`font-semibold text-sm ${
+                                  calculateStockStatus(product.stock || product.quantity || 0) === 'in-stock' ? (isDarkMode ? 'text-emerald-400' : 'text-emerald-600') :
+                                  calculateStockStatus(product.stock || product.quantity || 0) === 'low-stock' ? (isDarkMode ? 'text-amber-400' : 'text-amber-600') :
+                                  (isDarkMode ? 'text-red-400' : 'text-red-500')
+                                }`}>
+                                  {(product.stock || product.quantity || 0)} units
+                                </div>
                               </div>
                             </div>
-                            <div className={`text-center p-2 rounded ${isDarkMode ? 'bg-gray-700/50' : 'bg-gray-50'}`}>
-                              <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Stock</div>
-                              <div className={`font-semibold text-sm ${
-                                calculateStockStatus(product.stock || product.quantity || 0) === 'in-stock' ? (isDarkMode ? 'text-emerald-400' : 'text-emerald-600') :
-                                calculateStockStatus(product.stock || product.quantity || 0) === 'low-stock' ? (isDarkMode ? 'text-amber-400' : 'text-amber-600') :
-                                (isDarkMode ? 'text-red-400' : 'text-red-500')
-                              }`}>
-                                {(product.stock || product.quantity || 0)} units
+                            
+                            <div className="flex items-center justify-between pt-3 border-t border-gray-300 dark:border-gray-700">
+                              <div className="flex items-center gap-1">
+                                <TrendingUp className="h-3 w-3 text-emerald-500 dark:text-emerald-400" />
+                                <span className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Sales: {product.sales || 0}</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <button 
+                                  onClick={() => handleViewProduct(product)}
+                                  className={`p-1 rounded transition-all duration-300 ${isDarkMode ? 'hover:bg-blue-900/30' : 'hover:bg-blue-50/50'}`}
+                                >
+                                  <Eye className={`h-3 w-3 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+                                </button>
+                                <button 
+                                  onClick={() => handleEditClick(product)}
+                                  className={`p-1 rounded transition-all duration-300 ${isDarkMode ? 'hover:bg-blue-900/30' : 'hover:bg-blue-50/50'}`}
+                                >
+                                  <Edit className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+                                </button>
+                                <button 
+                                  ref={el => deleteButtonRefs.current[product.id] = el}
+                                  onClick={() => handleDeleteClick(product)}
+                                  className={`p-1 rounded transition-all duration-300 ${isDarkMode ? 'hover:bg-red-900/30' : 'hover:bg-red-50/50'}`}
+                                >
+                                  <Trash2 className="h-3 w-3 text-red-500 dark:text-red-400" />
+                                </button>
                               </div>
                             </div>
                           </div>
-                          
-                          <div className="flex items-center justify-between pt-3 border-t border-gray-300 dark:border-gray-700">
-                            <div className="flex items-center gap-1">
-                              <TrendingUp className="h-3 w-3 text-emerald-500 dark:text-emerald-400" />
-                              <span className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Sales: {product.sales || 0}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <button 
-                                onClick={() => handleViewProduct(product)}
-                                className={`p-1 rounded transition-all duration-300 ${isDarkMode ? 'hover:bg-blue-900/30' : 'hover:bg-blue-50/50'}`}
-                              >
-                                <Eye className={`h-3 w-3 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
-                              </button>
-                              <button 
-                                onClick={() => handleEditClick(product)}
-                                className={`p-1 rounded transition-all duration-300 ${isDarkMode ? 'hover:bg-blue-900/30' : 'hover:bg-blue-50/50'}`}
-                              >
-                                <Edit className="h-3 w-3 text-blue-600 dark:text-blue-400" />
-                              </button>
-                              <button 
-                                ref={el => deleteButtonRefs.current[product.id] = el}
-                                onClick={() => handleDeleteClick(product)}
-                                className={`p-1 rounded transition-all duration-300 ${isDarkMode ? 'hover:bg-red-900/30' : 'hover:bg-red-50/50'}`}
-                              >
-                                <Trash2 className="h-3 w-3 text-red-500 dark:text-red-400" />
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                     
                     {/* Desktop Table View */}
@@ -1497,109 +1578,110 @@ const addProduct = async (productData) => {
                         </tr>
                       </thead>
                       <tbody className={`${isDarkMode ? 'bg-gray-800 divide-gray-700' : 'bg-white divide-gray-200'}`}>
-                        {paginatedProducts.map((product) => (
-                          <tr key={product.id} className={`${isDarkMode ? 'hover:bg-gray-700/50' : 'hover:bg-gray-50'} transition-colors duration-150`}>
-                            <td className="px-4 py-3 whitespace-nowrap">
-                              <div className="flex items-center gap-3">
-                                <div className="relative h-10 w-10 rounded-lg overflow-hidden flex-shrink-0">
-                                  {product.image && (product.image.startsWith('http') || product.image.startsWith('/uploads/')) ? (
-                                    <>
-                                      <img 
-                                        src={product.image.startsWith('/uploads/') ? `http://localhost:5000${product.image}` : product.image} 
-                                        alt={product.name}
-                                        className="absolute inset-0 w-full h-full object-cover"
-                                        onError={(e) => {
-                                          e.target.onerror = null;
-                                          e.target.style.display = 'none';
-                                          e.target.nextSibling.style.display = 'flex';
-                                        }}
-                                      />
-                                      <div className="absolute inset-0 flex items-center justify-center text-lg" style={{display: 'none'}}>
+                        {paginatedProducts.map((product) => {
+                          const imageSrc = getImageSrc(product.image);
+                          return (
+                            <tr key={product.id} className={`${isDarkMode ? 'hover:bg-gray-700/50' : 'hover:bg-gray-50'} transition-colors duration-150`}>
+                              <td className="px-4 py-3 whitespace-nowrap">
+                                <div className="flex items-center gap-3">
+                                  <div className="relative h-10 w-10 rounded-lg overflow-hidden flex-shrink-0">
+                                    {imageSrc ? (
+                                      <>
+                                        <img 
+                                          src={imageSrc} 
+                                          alt={product.name}
+                                          className="absolute inset-0 w-full h-full object-cover"
+                                          onError={(e) => {
+                                            e.target.onerror = null;
+                                            e.target.style.display = 'none';
+                                            e.target.nextSibling.style.display = 'flex';
+                                          }}
+                                        />
+                                        <div className="absolute inset-0 flex items-center justify-center text-lg bg-gray-100 dark:bg-gray-700" style={{display: 'none'}}>
+                                          {getEmojiFromImage(product.image)}
+                                        </div>
+                                      </>
+                                    ) : (
+                                      <div className="absolute inset-0 flex items-center justify-center text-lg bg-gray-100 dark:bg-gray-700">
                                         {getEmojiFromImage(product.image)}
                                       </div>
-                                    </>
-                                  ) : (
-                                    <div className="absolute inset-0 flex items-center justify-center text-lg">
-                                      {getEmojiFromImage(product.image)}
-                                    </div>
+                                    )}
+                                  </div>
+                                  <div className="min-w-0">
+                                    <div className={`font-medium text-sm truncate ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{product.name}</div>
+                                    <div className={`text-xs truncate ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{product.id}</div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap">
+                                <div className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>{product.category}</div>
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap">
+                                <span className={`font-semibold text-sm ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+                                  ${typeof product.price === 'number' ? product.price.toFixed(2) : product.price}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap">
+                                <div className="flex items-center gap-2">
+                                  <span className={`font-semibold text-sm ${
+                                    calculateStockStatus(product.stock || product.quantity || 0) === 'in-stock' ? (isDarkMode ? 'text-emerald-400' : 'text-emerald-600') :
+                                    calculateStockStatus(product.stock || product.quantity || 0) === 'low-stock' ? (isDarkMode ? 'text-amber-400' : 'text-amber-600') :
+                                    (isDarkMode ? 'text-red-400' : 'text-red-500')
+                                  }`}>
+                                    {(product.stock || product.quantity || 0)} units
+                                  </span>
+                                  {calculateStockStatus(product.stock || product.quantity || 0) === 'low-stock' && (
+                                    <AlertCircle className="h-4 w-4 text-amber-500 dark:text-amber-400" />
                                   )}
                                 </div>
-                                <div className="min-w-0">
-                                  <div className={`font-medium text-sm truncate ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{product.name}</div>
-                                  <div className={`text-xs truncate ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{product.id}</div>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap">
-                              <div className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>{product.category}</div>
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap">
-                              <span className={`font-semibold text-sm ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
-                                ${typeof product.price === 'number' ? product.price.toFixed(2) : product.price}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap">
-                              {/* Stock cell - updated to show dynamic color based on current stock */}
-                              <div className="flex items-center gap-2">
-                                <span className={`font-semibold text-sm ${
-                                  calculateStockStatus(product.stock || product.quantity || 0) === 'in-stock' ? (isDarkMode ? 'text-emerald-400' : 'text-emerald-600') :
-                                  calculateStockStatus(product.stock || product.quantity || 0) === 'low-stock' ? (isDarkMode ? 'text-amber-400' : 'text-amber-600') :
-                                  (isDarkMode ? 'text-red-400' : 'text-red-500')
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap">
+                                <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-medium ${
+                                  calculateStockStatus(product.stock || product.quantity || 0) === 'in-stock' ? (isDarkMode ? 'bg-emerald-900/30 text-emerald-300 border-emerald-800' : 'bg-emerald-50 text-emerald-700 border-emerald-200') :
+                                  calculateStockStatus(product.stock || product.quantity || 0) === 'low-stock' ? (isDarkMode ? 'bg-amber-900/30 text-amber-300 border-amber-800' : 'bg-amber-50 text-amber-700 border-amber-200') :
+                                  (isDarkMode ? 'bg-red-900/30 text-red-300 border-red-800' : 'bg-red-50 text-red-700 border-red-200')
                                 }`}>
-                                  {(product.stock || product.quantity || 0)} units
+                                  {calculateStockStatus(product.stock || product.quantity || 0) === 'in-stock' ? (
+                                    <CheckCircle className="h-3 w-3" />
+                                  ) : (
+                                    <AlertCircle className="h-3 w-3" />
+                                  )}
+                                  {calculateStockStatus(product.stock || product.quantity || 0) === 'in-stock' ? 'In Stock' : 
+                                   calculateStockStatus(product.stock || product.quantity || 0) === 'low-stock' ? 'Low Stock' : 'Out of Stock'}
                                 </span>
-                                {calculateStockStatus(product.stock || product.quantity || 0) === 'low-stock' && (
-                                  <AlertCircle className="h-4 w-4 text-amber-500 dark:text-amber-400" />
-                                )}
-                              </div>
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap">
-                              {/* Status cell - updated to use calculateStockStatus */}
-                              <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-medium ${
-                                calculateStockStatus(product.stock || product.quantity || 0) === 'in-stock' ? (isDarkMode ? 'bg-emerald-900/30 text-emerald-300 border-emerald-800' : 'bg-emerald-50 text-emerald-700 border-emerald-200') :
-                                calculateStockStatus(product.stock || product.quantity || 0) === 'low-stock' ? (isDarkMode ? 'bg-amber-900/30 text-amber-300 border-amber-800' : 'bg-amber-50 text-amber-700 border-amber-200') :
-                                (isDarkMode ? 'bg-red-900/30 text-red-300 border-red-800' : 'bg-red-50 text-red-700 border-red-200')
-                              }`}>
-                                {calculateStockStatus(product.stock || product.quantity || 0) === 'in-stock' ? (
-                                  <CheckCircle className="h-3 w-3" />
-                                ) : (
-                                  <AlertCircle className="h-3 w-3" />
-                                )}
-                                {calculateStockStatus(product.stock || product.quantity || 0) === 'in-stock' ? 'In Stock' : 
-                                 calculateStockStatus(product.stock || product.quantity || 0) === 'low-stock' ? 'Low Stock' : 'Out of Stock'}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap">
-                              <div className="flex items-center gap-2">
-                                <TrendingUp className="h-4 w-4 text-emerald-500 dark:text-emerald-400" />
-                                <span className={`font-medium text-sm ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{product.sales || 0}</span>
-                              </div>
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap">
-                              <div className="flex items-center space-x-2">
-                                <button 
-                                  onClick={() => handleViewProduct(product)}
-                                  className={`p-1 rounded-lg transition-all duration-300 hover:scale-110 ${isDarkMode ? 'hover:bg-blue-900/30' : 'hover:bg-blue-50/50'}`}
-                                >
-                                  <Eye className={`h-4 w-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
-                                </button>
-                                <button 
-                                  onClick={() => handleEditClick(product)}
-                                  className={`p-1 rounded-lg transition-all duration-300 hover:scale-110 ${isDarkMode ? 'hover:bg-blue-900/30' : 'hover:bg-blue-50/50'}`}
-                                >
-                                  <Edit className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                                </button>
-                                <button 
-                                  ref={el => deleteButtonRefs.current[product.id] = el}
-                                  onClick={() => handleDeleteClick(product)}
-                                  className={`p-1 rounded-lg transition-all duration-300 hover:scale-110 ${isDarkMode ? 'hover:bg-red-900/30' : 'hover:bg-red-50/50'}`}
-                                >
-                                  <Trash2 className="h-4 w-4 text-red-500 dark:text-red-400" />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap">
+                                <div className="flex items-center gap-2">
+                                  <TrendingUp className="h-4 w-4 text-emerald-500 dark:text-emerald-400" />
+                                  <span className={`font-medium text-sm ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{product.sales || 0}</span>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap">
+                                <div className="flex items-center space-x-2">
+                                  <button 
+                                    onClick={() => handleViewProduct(product)}
+                                    className={`p-1 rounded-lg transition-all duration-300 hover:scale-110 ${isDarkMode ? 'hover:bg-blue-900/30' : 'hover:bg-blue-50/50'}`}
+                                  >
+                                    <Eye className={`h-4 w-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+                                  </button>
+                                  <button 
+                                    onClick={() => handleEditClick(product)}
+                                    className={`p-1 rounded-lg transition-all duration-300 hover:scale-110 ${isDarkMode ? 'hover:bg-blue-900/30' : 'hover:bg-blue-50/50'}`}
+                                  >
+                                    <Edit className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                  </button>
+                                  <button 
+                                    ref={el => deleteButtonRefs.current[product.id] = el}
+                                    onClick={() => handleDeleteClick(product)}
+                                    className={`p-1 rounded-lg transition-all duration-300 hover:scale-110 ${isDarkMode ? 'hover:bg-red-900/30' : 'hover:bg-red-50/50'}`}
+                                  >
+                                    <Trash2 className="h-4 w-4 text-red-500 dark:text-red-400" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
@@ -1665,7 +1747,6 @@ const addProduct = async (productData) => {
                     
                     <div className="space-y-2 sm:space-y-3 lg:space-y-4">
                       {statusStats.map((stat, index) => {
-                        // Calculate exact percentage (0-100%)
                         const percentage = products.length > 0 
                           ? (stat.count / products.length) * 100
                           : 0;
@@ -1706,15 +1787,13 @@ const addProduct = async (productData) => {
                                   style={{ 
                                     width: `${percentage}%`,
                                     animationDelay: `${index * 0.2}s`,
-                                    // SOLID COLOR BASED ON STATUS
                                     background: stat.label === 'In Stock' 
-                                      ? (isDarkMode ? '#10b981' : '#34d399') // Green
+                                      ? (isDarkMode ? '#10b981' : '#34d399')
                                       : stat.label === 'Low Stock' 
-                                      ? (isDarkMode ? '#f59e0b' : '#fbbf24') // Amber/Yellow
-                                      : (isDarkMode ? '#ef4444' : '#f87171') // Red
+                                      ? (isDarkMode ? '#f59e0b' : '#fbbf24')
+                                      : (isDarkMode ? '#ef4444' : '#f87171')
                                   }}
                                 >
-                                  {/* Shine effect for animated look */}
                                   <div 
                                     className={`absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent ${
                                       stat.count > 0 ? 'animate-pulse' : ''
@@ -1726,7 +1805,6 @@ const addProduct = async (productData) => {
                                 </div>
                               </div>
                               
-                              {/* Optional: Show percentage label on hover */}
                               <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
                                 <span 
                                   className={`text-xs font-bold px-2 py-1 rounded-full backdrop-blur-sm ${
@@ -1968,7 +2046,6 @@ const addProduct = async (productData) => {
                     </button>
                     <button
                       onClick={() => {
-                        // Show animation first, then delete
                         setTrashAnimation(true);
                         setTimeout(() => {
                           handleDeleteProduct();

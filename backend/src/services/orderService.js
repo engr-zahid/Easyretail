@@ -1,4 +1,3 @@
-// orderService.js
 const orderModel = require('../models/orderModel');
 const customerModel = require('../models/customerModel');
 const productModel = require('../models/productModel');
@@ -99,9 +98,7 @@ const orderService = {
     }
   },
 
-  // ============================================
-  // NEW: Get customer order history
-  // ============================================
+  // Get customer order history
   getCustomerOrders: async (customerId) => {
     try {
       return await orderModel.getOrdersByCustomer(customerId);
@@ -111,9 +108,7 @@ const orderService = {
     }
   },
 
-  // ============================================
-  // NEW: Get recent orders for dashboard
-  // ============================================
+  // Get recent orders for dashboard
   getRecentOrders: async (limit = 10) => {
     try {
       return await orderModel.getRecentOrdersSummary(limit);
@@ -123,9 +118,7 @@ const orderService = {
     }
   },
 
-  // ============================================
-  // NEW: Get order analytics
-  // ============================================
+  // Get order analytics
   getOrderAnalytics: async (startDate, endDate) => {
     try {
       const orders = await orderModel.getAllOrders();
