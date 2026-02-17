@@ -9,29 +9,27 @@ const supplierRoutes = require('./routes/supplierRoute');
 const orderRoutes = require('./routes/orderRoute');
 
 const app = express();
+// When running behind a proxy (nginx) trust the proxy headers
+app.set('trust proxy', true);
 
 // Get allowed origins based on environment
 const getCorsOrigins = () => {
   if (process.env.NODE_ENV === 'production') {
     const productionOrigins = [];
     
-    // Add FRONTEND_URL if set
     if (process.env.FRONTEND_URL) {
       productionOrigins.push(process.env.FRONTEND_URL);
     }
     
-    // Add VITE_API_URL if set (for frontend)
     if (process.env.VITE_API_URL) {
       productionOrigins.push(process.env.VITE_API_URL.replace('/api', ''));
     }
     
-    // Default fallback for production
     return productionOrigins.length > 0 
       ? productionOrigins 
-      : ['https://yourdomain.com']; // Change this to your actual domain
+      : ['https://easyretail.sevalla.app'];
   }
   
-  // Development origins
   return [
     'http://localhost:3000',
     'http://localhost:5173',
@@ -43,12 +41,11 @@ const getCorsOrigins = () => {
 // CORS configuration
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
     const allowedOrigins = getCorsOrigins();
     
-    if (allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.includes('*')) {
+    if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
       console.warn(`CORS blocked origin: ${origin}`);
@@ -60,9 +57,6 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   exposedHeaders: ['Content-Range', 'X-Content-Range']
 }));
-
-// Handle preflight requests
-app.options('*', cors());
 
 // Middleware
 app.use(express.json({ limit: '10mb' }));
@@ -78,7 +72,7 @@ if (process.env.NODE_ENV === 'development') {
 if (process.env.NODE_ENV === 'production') {
   const helmet = require('helmet');
   app.use(helmet({
-    contentSecurityPolicy: false, // Disable for now, configure properly later
+    contentSecurityPolicy: false,
     crossOriginEmbedderPolicy: false
   }));
 }
@@ -99,7 +93,7 @@ app.use((req, res, next) => {
 });
 
 // Routes
-app.use('/api', productRoutes);
+app.use('/api', productRoutes);  
 app.use('/api/customers', customerRoutes);
 app.use('/api/suppliers', supplierRoutes);
 app.use('/api/orders', orderRoutes);
@@ -115,45 +109,23 @@ app.get('/health', (req, res) => {
   });
 });
 
-// API documentation route
+// Root route
 app.get('/', (req, res) => {
   res.json({ 
     message: 'Shop Management API',
     version: '1.0.0',
     environment: process.env.NODE_ENV,
     endpoints: {
-      products: {
-        GET: '/api/products',
-        POST: '/api/products',
-        PUT: '/api/products/:id',
-        DELETE: '/api/products/:id'
-      },
-      customers: {
-        GET: '/api/customers',
-        POST: '/api/customers',
-        PUT: '/api/customers/:id',
-        DELETE: '/api/customers/:id'
-      },
-      suppliers: {
-        GET: '/api/suppliers',
-        POST: '/api/suppliers',
-        PUT: '/api/suppliers/:id',
-        DELETE: '/api/suppliers/:id'
-      },
-      orders: {
-        GET: '/api/orders',
-        POST: '/api/orders',
-        PUT: '/api/orders/:id',
-        DELETE: '/api/orders/:id'
-      },
-      health: {
-        GET: '/health'
-      }
+      products: '/api/products',
+      customers: '/api/customers',
+      suppliers: '/api/suppliers',
+      orders: '/api/orders',
+      health: '/health'
     }
   });
 });
 
-// 404 handler
+// 404 handler - DON'T USE WILDCARD '*'
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -176,8 +148,7 @@ app.use((err, req, res, next) => {
     ...(isDevelopment && { 
       stack: err.stack,
       error: err.message 
-    }),
-    ...(err.code && { code: err.code })
+    })
   };
   
   res.status(statusCode).json(errorResponse);

@@ -26,13 +26,13 @@ services:
       - NODE_ENV=development
       - DATABASE_URL=postgresql://easyretail:easyretail123@postgres:5432/easyretail_db
     volumes:
-      - ./backend:/app
+      - /app/node_modules
       - ./backend/uploads:/app/uploads
     depends_on:
       - postgres
     networks:
       - easyretail-network
-    command: sh -c "npx prisma migrate deploy && npm run dev"
+    command: sh -c "npx prisma migrate deploy && node server.js"
 
   frontend:
     build:

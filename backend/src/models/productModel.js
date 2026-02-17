@@ -5,9 +5,7 @@ const productModel = {
     try {
       console.log('Fetching all products from database...');
       const products = await prisma.product.findMany({
-        orderBy: {
-          createdAt: 'desc'
-        }
+        orderBy: { createdAt: 'desc' }
       });
       console.log(`Found ${products.length} products in database`);
       return products;
@@ -20,9 +18,7 @@ const productModel = {
   async getProductById(id) {
     try {
       console.log(`Fetching product by ID: ${id}`);
-      const product = await prisma.product.findUnique({
-        where: { id }
-      });
+      const product = await prisma.product.findUnique({ where: { id } });
       console.log('Product found:', !!product);
       return product;
     } catch (error) {
@@ -34,7 +30,6 @@ const productModel = {
   async createProduct(productData) {
     try {
       console.log('Creating product in database:', productData);
-      
       const product = await prisma.product.create({
         data: {
           name: productData.name,
@@ -49,7 +44,6 @@ const productModel = {
           isActive: productData.isActive !== undefined ? productData.isActive : true
         }
       });
-      
       console.log('Product created successfully:', product.id);
       return product;
     } catch (error) {
@@ -61,7 +55,6 @@ const productModel = {
   async updateProduct(id, productData) {
     try {
       console.log(`Updating product ${id}:`, productData);
-      
       const product = await prisma.product.update({
         where: { id },
         data: {
@@ -86,10 +79,7 @@ const productModel = {
   async deleteProduct(id) {
     try {
       console.log(`Deleting product ${id}`);
-      
-      const product = await prisma.product.delete({
-        where: { id }
-      });
+      const product = await prisma.product.delete({ where: { id } });
       
       console.log('Product deleted successfully');
       return product;
