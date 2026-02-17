@@ -36,7 +36,6 @@ RUN cd backend && npm ci --only=production
 # Copy Prisma schema and config
 COPY backend/prisma ./backend/prisma/
 COPY backend/prisma.config.ts ./backend/
-COPY backend/tsconfig.json ./backend/
 
 # Generate Prisma Client
 RUN cd backend && npx prisma generate
