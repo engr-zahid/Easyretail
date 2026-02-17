@@ -5,13 +5,13 @@ FROM node:20-alpine AS frontend-builder
 WORKDIR /app/frontend
 
 # Copy frontend package files
-COPY Easyretail/frontend/package*.json ./
+COPY frontend/package*.json ./
 
 # Install frontend dependencies
 RUN npm ci
 
 # Copy frontend source code
-COPY Easyretail/frontend/ ./
+COPY frontend/ ./
 
 # Build frontend
 RUN npm run build
@@ -24,27 +24,27 @@ WORKDIR /app
 # Install Prisma CLI globally (needed for migrations)
 RUN npm install -g prisma@^7.2.0
 
-# Create directory structure matching original project
+# Create directory structure
 RUN mkdir -p backend frontend
 
 # Copy backend package files
-COPY Easyretail/backend/package*.json ./backend/
+COPY backend/package*.json ./backend/
 
 # Install backend dependencies
 RUN cd backend && npm ci --only=production
 
 # Copy Prisma schema and config
-COPY Easyretail/backend/prisma ./backend/prisma/
-COPY Easyretail/backend/prisma.config.ts ./backend/
-COPY Easyretail/backend/tsconfig.json ./backend/
+COPY backend/prisma ./backend/prisma/
+COPY backend/prisma.config.ts ./backend/
+COPY backend/tsconfig.json ./backend/
 
 # Generate Prisma Client
 RUN cd backend && npx prisma generate
 
 # Copy backend source code
-COPY Easyretail/backend/ ./backend/
+COPY backend/ ./backend/
 
-# Copy built frontend from builder stage (maintaining structure)
+# Copy built frontend from builder stage
 COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
 
 # Create uploads directory
