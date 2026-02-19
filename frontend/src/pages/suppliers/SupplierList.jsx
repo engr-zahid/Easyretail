@@ -244,7 +244,7 @@ const SupplierList = () => {
         };
         
         // Add to backend
-        const response = await axios.post(`${API_BASE_URL}/suppliers`, supplierToAdd);
+        const response = await api.post('/suppliers', supplierToAdd);
         
         if (response.data.success) {
           // Add to local state
@@ -289,7 +289,7 @@ const SupplierList = () => {
     if (selectedSupplier) {
       try {
         setIsProcessing(true);
-        await axios.put(`${API_BASE_URL}/suppliers/${selectedSupplier.id}`, selectedSupplier);
+        await api.put(`/suppliers/${selectedSupplier.id}`, selectedSupplier);
         
         // Update local state
         setSuppliers(prev => prev.map(s => 
@@ -314,7 +314,7 @@ const SupplierList = () => {
     if (selectedSupplier) {
       try {
         setIsProcessing(true);
-        await axios.delete(`${API_BASE_URL}/suppliers/${selectedSupplier.id}`);
+        await api.delete(`/suppliers/${selectedSupplier.id}`);
         
         // Remove from local state
         setSuppliers(prev => prev.filter(s => s.id !== selectedSupplier.id));
@@ -357,7 +357,7 @@ const SupplierList = () => {
       // Clear all from backend
       suppliers.forEach(async supplier => {
         try {
-          await axios.delete(`${API_BASE_URL}/suppliers/${supplier.id}`);
+          await api.delete(`/suppliers/${supplier.id}`);
         } catch (error) {
           console.error(`Error deleting supplier ${supplier.id}:`, error);
         }

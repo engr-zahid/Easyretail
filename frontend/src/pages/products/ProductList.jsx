@@ -32,6 +32,7 @@ import {
 // import { useProducts } from "../../context/ProductsContext";
 
 const ProductList = () => {
+  const UPLOADS_BASE = (api.defaults.baseURL || import.meta.env.VITE_API_URL || 'https://easyretail-8sfyc.sevalla.app/api').replace('/api', '');
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All Categories');
   const [statusFilter, setStatusFilter] = useState('All Status');
@@ -337,7 +338,7 @@ const addProduct = async (productData) => {
       console.log('Sending product data (no file):', requestData);
     }
 
-    const response = await axios.post(`${API_BASE_URL}/products`, requestData, { headers });
+    const response = await api.post(`/products`, requestData, { headers });
 
     console.log('Product added response:', response.data);
 
@@ -395,7 +396,7 @@ const addProduct = async (productData) => {
         image: productData.image || '📦'
       };
       
-      const response = await axios.put(`${API_BASE_URL}/products/${productId}`, backendProduct);
+      const response = await api.put(`/products/${productId}`, backendProduct);
       
       // Refresh products list
       await fetchProducts();
@@ -413,7 +414,7 @@ const addProduct = async (productData) => {
   const deleteProduct = async (productId) => {
     try {
       setIsProcessing(true);
-      await axios.delete(`${API_BASE_URL}/products/${productId}`);
+      await api.delete(`/products/${productId}`);
       
       // Refresh products list
       await fetchProducts();
@@ -433,7 +434,7 @@ const addProduct = async (productData) => {
       setIsProcessing(true);
       // Delete all products one by one (or implement bulk delete on backend)
       for (const product of products) {
-        await axios.delete(`${API_BASE_URL}/products/${product.id}`);
+        await api.delete(`/products/${product.id}`);
       }
       
       // Refresh products list
@@ -1380,7 +1381,7 @@ const addProduct = async (productData) => {
                                 {product.image && (product.image.startsWith('http') || product.image.startsWith('/uploads/')) ? (
                                   <>
                                     <img 
-                                     src={product.image.startsWith('/uploads/') ? `${API_BASE_URL.replace('/api', '')}${product.image}` : product.image}
+                                    src={product.image.startsWith('/uploads/') ? `${UPLOADS_BASE}${product.image}` : product.image}
                                       className="absolute inset-0 w-full h-full object-cover"
                                       onError={(e) => {
                                         e.target.onerror = null;
@@ -1503,7 +1504,7 @@ const addProduct = async (productData) => {
                                   {product.image && (product.image.startsWith('http') || product.image.startsWith('/uploads/')) ? (
                                     <>
                                       <img 
-                                        src={product.image.startsWith('/uploads/') ? `${API_BASE_URL.replace('/api', '')}${product.image}` : product.image}
+                                        src={product.image.startsWith('/uploads/') ? `${UPLOADS_BASE}${product.image}` : product.image}
                                         className="absolute inset-0 w-full h-full object-cover"
                                         onError={(e) => {
                                           e.target.onerror = null;

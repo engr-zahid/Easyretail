@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import api from '../../utils/api';
 import { 
   Search, 
   Eye, 
@@ -60,8 +61,7 @@ const OrderList = () => {
     quantity: 1
   });
   
-  // API base URL
-  const API_BASE_URL = 'http://localhost:5000/api';
+  // Use central api instance
   
   // Stats state
   const [stats, setStats] = useState({
@@ -78,8 +78,8 @@ const OrderList = () => {
     
     // Fetch orders FIRST to debug
     try {
-      console.log(`📋 Fetching orders from: ${API_BASE_URL}/orders`);
-      const ordersRes = await axios.get(`${API_BASE_URL}/orders`);
+      console.log('📋 Fetching orders from central API instance');
+      const ordersRes = await api.get(`/orders`);
       console.log('📦 Orders API raw response:', ordersRes.data);
       
       let ordersData = [];
@@ -111,7 +111,7 @@ const OrderList = () => {
     // Fetch products
     try {
       console.log('📦 Fetching products...');
-      const productsRes = await axios.get(`${API_BASE_URL}/products`);
+      const productsRes = await api.get(`/products`);
       
       if (productsRes.data.success) {
         const productsData = productsRes.data.products || productsRes.data.data || [];
@@ -125,7 +125,7 @@ const OrderList = () => {
     // Fetch customers
     try {
       console.log('👥 Fetching customers...');
-      const customersRes = await axios.get(`${API_BASE_URL}/customers`);
+      const customersRes = await api.get(`/customers`);
       
       if (customersRes.data.success) {
         const customersData = customersRes.data.data || customersRes.data.customers || [];
@@ -269,7 +269,7 @@ const handleCreateOrder = async () => {
 
     console.log('📤 Sending order data to backend:', JSON.stringify(orderData, null, 2));
     
-    const response = await axios.post(`${API_BASE_URL}/orders`, orderData);
+    const response = await api.post(`/orders`, orderData);
     
     console.log('✅ Backend POST response status:', response.status);
     console.log('📊 Full response data:', response.data);
@@ -375,7 +375,7 @@ const handleDeleteOrder = async () => {
   
   setIsProcessing(true);
   try {
-    const response = await axios.delete(`${API_BASE_URL}/orders/${selectedOrder.id}`);
+    const response = await api.delete(`/orders/${selectedOrder.id}`);
     
     if (response.data.success) {
       // Remove from local state immediately
@@ -402,7 +402,7 @@ const handleDeleteOrder = async () => {
   // Handle update status
   const handleUpdateStatus = async (orderId, newStatus) => {
     try {
-      const response = await axios.patch(`${API_BASE_URL}/orders/${orderId}/status`, { status: newStatus });
+      const response = await api.patch(`/orders/${orderId}/status`, { status: newStatus });
       if (response.data.success) {
         // Update local state immediately
         setOrders(prev => prev.map(order => 

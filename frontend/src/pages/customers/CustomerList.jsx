@@ -285,7 +285,7 @@ const handleAddCustomer = async () => {
     console.log('📤 Sending customer data to backend:', customerData);
     
     // Add to backend
-    const response = await axios.post(`${API_BASE_URL}/customers`, customerData);
+    const response = await api.post(`/customers`, customerData);
     console.log('✅ Customer creation response:', response.data);
     
     if (response.data.success) {
@@ -393,7 +393,7 @@ const handleEditCustomer = async () => {
       
       console.log('📤 Updating customer:', selectedCustomer.id, updateData);
       
-      const response = await axios.put(`${API_BASE_URL}/customers/${selectedCustomer.id}`, updateData);
+      const response = await api.put(`/customers/${selectedCustomer.id}`, updateData);
       console.log('✅ Update response:', response.data);
       
       if (response.data.success) {
@@ -429,7 +429,7 @@ const handleDeleteCustomer = async () => {
   if (selectedCustomer) {
     try {
       setIsProcessing(true);
-      const response = await axios.delete(`${API_BASE_URL}/customers/${selectedCustomer.id}`);
+      const response = await api.delete(`/customers/${selectedCustomer.id}`);
       
       console.log('✅ Delete response:', response.data);
       
@@ -479,7 +479,7 @@ const handleDeleteCustomer = async () => {
       // Clear all from backend
       customers.forEach(async customer => {
         try {
-          await axios.delete(`${API_BASE_URL}/customers/${customer.id}`);
+          await api.delete(`/customers/${customer.id}`);
         } catch (error) {
           console.error(`Error deleting customer ${customer.id}:`, error);
         }
