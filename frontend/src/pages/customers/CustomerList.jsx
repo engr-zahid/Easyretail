@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import api from '../../utils/api';
 import { 
   Plus, 
   Search, 
@@ -57,16 +58,14 @@ const CustomerList = () => {
   // Customers state
   const [customers, setCustomers] = useState([]);
   
-  // API base URL
-  const API_BASE_URL = 'http://localhost:5000/api';
+  // Use central api instance
   
 // Fetch customers from backend - FIXED VERSION
 const fetchCustomers = async () => {
   try {
     setIsLoading(true);
-    console.log('🔄 Fetching customers from:', `${API_BASE_URL}/customers`);
-    
-    const res = await axios.get(`${API_BASE_URL}/customers`);
+    console.log('🔄 Fetching customers from central API instance');
+    const res = await api.get(`/customers`);
     console.log('📥 Raw API response:', res.data);
     
     // Your backend returns: { success: true, data: [...] }

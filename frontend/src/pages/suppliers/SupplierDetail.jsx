@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../../utils/api';
 import { 
   ArrowLeft, 
   Edit, 
@@ -52,7 +52,7 @@ const SupplierDetail = () => {
   const fetchSupplier = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`http://localhost:5000/api/suppliers/${id}`);
+      const res = await api.get(`/suppliers/${id}`);
       
       if (res.data && res.data.success) {
         const supplierData = res.data.data;
@@ -100,7 +100,7 @@ const SupplierDetail = () => {
 
   const handleDelete = async () => {
     try {
-      await axios.delete(`http://localhost:5000/api/suppliers/${id}`);
+      await api.delete(`/suppliers/${id}`);
       navigate('/suppliers');
     } catch (error) {
       console.error("Error deleting supplier:", error);

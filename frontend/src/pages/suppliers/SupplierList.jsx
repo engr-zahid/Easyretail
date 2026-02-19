@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import api from '../../utils/api';
 import { 
   Plus, 
   Search, 
@@ -57,14 +58,13 @@ const SupplierList = () => {
   // Suppliers state
   const [suppliers, setSuppliers] = useState([]);
   
-  // API base URL
-  const API_BASE_URL = 'http://localhost:5000/api';
+  // Use central api instance
   
   // Fetch suppliers from backend
   const fetchSuppliers = async () => {
     try {
       setIsLoading(true);
-      const res = await axios.get(`${API_BASE_URL}/suppliers`);
+      const res = await api.get(`/suppliers`);
       
       if (res.data && res.data.success && Array.isArray(res.data.data)) {
         const transformedSuppliers = res.data.data.map(supplier => ({

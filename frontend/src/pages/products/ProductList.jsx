@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios'; // Added axios for API calls
+import api from '../../utils/api';
 import { 
   Plus, 
   Search, 
@@ -59,14 +60,12 @@ const ProductList = () => {
   // Products state - now fetched from backend
   const [products, setProducts] = useState([]);
   
-  // API base URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-  const fetchProducts = async () => {
+    const fetchProducts = async () => {
     try {
       setIsLoading(true);
-      console.log('Fetching products from:', `${API_BASE_URL}/products`);
+        console.log('Fetching products from central API instance');
 
-      const res = await axios.get(`${API_BASE_URL}/products`);
+        const res = await api.get('/products');
 
       console.log('Response received:', res.data);
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from '../../utils/api';
 import {
   ArrowLeft,
   Edit,
@@ -59,7 +59,7 @@ const CustomerDetail = () => {
   const fetchCustomer = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`http://localhost:5000/api/customers/${id}`);
+      const res = await api.get(`/customers/${id}`);
 
       if (res.data && res.data.success) {
         const customerData = res.data.data;
@@ -111,9 +111,7 @@ const CustomerDetail = () => {
   const fetchCustomerOrders = async () => {
     try {
       setOrdersLoading(true);
-      const res = await axios.get(
-        `http://localhost:5000/api/orders/customer/${id}`,
-      );
+      const res = await api.get(`/orders/customer/${id}`);
 
       if (res.data && res.data.success) {
         setOrders(res.data.orders || []);
@@ -157,7 +155,7 @@ const CustomerDetail = () => {
 
   const handleDelete = async () => {
     try {
-      await axios.delete(`http://localhost:5000/api/customers/${id}`);
+      await api.delete(`/customers/${id}`);
       navigate("/customers");
     } catch (error) {
       console.error("Error deleting customer:", error);
