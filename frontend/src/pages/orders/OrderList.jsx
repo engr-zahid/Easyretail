@@ -909,8 +909,32 @@ const handleDeleteOrder = async () => {
               </div>
             </div>
             
-            {/* Orders List */}
-            <div className="overflow-x-auto">
+            {/* Mobile cards (small screens) */}
+            <div className="md:hidden space-y-4 p-4">
+              {paginatedOrders.map((order, idx) => {
+                const statusColor = getStatusColor(order.status);
+                return (
+                  <div key={order.id || order._id || `order-${idx}`} className={`p-4 rounded-lg ${isDarkMode ? 'bg-gray-800/60' : 'bg-white'} flex items-center justify-between` }>
+                    <div className="min-w-0">
+                      <div className={`font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{order.orderNumber || `ORD-${(order.id||'').toString().slice(0,8)}`}</div>
+                      <div className="text-xs text-gray-500">{order.customer?.name || 'Walk-in Customer'}</div>
+                      <div className="text-sm mt-1 font-bold">${order.totalAmount?.toFixed(2) || '0.00'}</div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${isDarkMode ? `${statusColor.bg}/20 ${statusColor.darkText}` : `${statusColor.bg}/10 ${statusColor.text}`}`}>
+                        {order.status}
+                      </span>
+                      <button onClick={() => { setSelectedOrder(order); setShowViewModal(true); }} className="p-2 rounded-lg hover:bg-blue-50/50">
+                        <Eye className="h-4 w-4 text-blue-500" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Desktop table (md and up) */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full">
                 <thead className={`${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
                   <tr>
@@ -1075,10 +1099,10 @@ const handleDeleteOrder = async () => {
       
       {/* Create Order Modal */}
       {showCreateModal && (
-        <div className={`fixed inset-0 z-50 flex items-center justify-center ${isDarkMode ? 'bg-black/70' : 'bg-black/50'} backdrop-blur-sm p-4 animate-fade-in`}>
-          <div className="relative w-full max-w-6xl max-h-[90vh] overflow-hidden">
+        <div className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center ${isDarkMode ? 'bg-black/70' : 'bg-black/50'} backdrop-blur-sm p-2 sm:p-4 animate-fade-in`}>
+          <div className="relative w-full mx-2 sm:mx-auto max-w-full sm:max-w-xl md:max-w-4xl lg:max-w-6xl max-h-[90vh] overflow-hidden">
             <div className={`${isDarkMode ? 'card-border-dark' : 'card-border'}`}>
-              <div className={`${isDarkMode ? 'card-inner-dark' : 'card-inner'} max-h-[85vh] overflow-y-auto`}>
+              <div className={`${isDarkMode ? 'card-inner-dark' : 'card-inner'} max-h-[90vh] overflow-y-auto`}>
                 <div className="p-6">
                   <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-3">
@@ -1359,8 +1383,8 @@ const handleDeleteOrder = async () => {
       
       {/* Delete Confirmation Modal */}
       {showDeleteModal && selectedOrder && (
-        <div className={`fixed inset-0 z-50 flex items-center justify-center ${isDarkMode ? 'bg-black/70' : 'bg-black/50'} backdrop-blur-sm p-4 animate-fade-in`}>
-          <div className="relative w-full max-w-md">
+        <div className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center ${isDarkMode ? 'bg-black/70' : 'bg-black/50'} backdrop-blur-sm p-4 animate-fade-in`}>
+          <div className="relative w-full mx-2 sm:mx-auto max-w-full sm:max-w-md">
             <div className={`${isDarkMode ? 'card-border-dark' : 'card-border'}`}>
               <div className={`${isDarkMode ? 'card-inner-dark' : 'card-inner'}`}>
                 <div className="p-6">
@@ -1407,8 +1431,8 @@ const handleDeleteOrder = async () => {
       
       {/* View Order Modal */}
       {showViewModal && selectedOrder && (
-        <div className={`fixed inset-0 z-50 flex items-center justify-center ${isDarkMode ? 'bg-black/70' : 'bg-black/50'} backdrop-blur-sm p-4 animate-fade-in`}>
-          <div className="relative w-full max-w-4xl max-h-[90vh] overflow-hidden">
+        <div className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center ${isDarkMode ? 'bg-black/70' : 'bg-black/50'} backdrop-blur-sm p-4 animate-fade-in`}>
+          <div className="relative w-full mx-2 sm:mx-auto max-w-full sm:max-w-4xl max-h-[90vh] overflow-hidden">
             <div className={`${isDarkMode ? 'card-border-dark' : 'card-border'}`}>
               <div className={`${isDarkMode ? 'card-inner-dark' : 'card-inner'} max-h-[85vh] overflow-y-auto`}>
                 <div className="p-6">

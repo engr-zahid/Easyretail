@@ -27,7 +27,8 @@ import {
   TrendingUp,
   Package,
   DollarSign,
-  Briefcase
+  Briefcase,
+  Menu
 } from 'lucide-react';
 
 const SupplierList = () => {
@@ -49,6 +50,7 @@ const SupplierList = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState('');
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
   
   const addButtonRef = useRef(null);
   const addModalButtonRef = useRef(null);
@@ -189,7 +191,7 @@ const SupplierList = () => {
       count: suppliers.length, 
       gradient: 'from-green-400 to-emerald-400',
       darkGradient: 'from-green-500 to-emerald-500',
-      icon: <Truck className="h-5 w-5" />,
+      icon: <Truck className="h-4 w-4 sm:h-5 sm:w-5" />,
       color: isDarkMode ? 'bg-green-500' : 'bg-green-400'
     },
     { 
@@ -197,7 +199,7 @@ const SupplierList = () => {
       count: suppliers.filter(s => s.status === 'active').length, 
       gradient: 'from-emerald-400 to-teal-400',
       darkGradient: 'from-emerald-500 to-teal-500',
-      icon: <CheckCircle className="h-5 w-5" />,
+      icon: <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5" />,
       color: isDarkMode ? 'bg-emerald-500' : 'bg-emerald-400'
     },
     { 
@@ -205,7 +207,7 @@ const SupplierList = () => {
       count: suppliers.reduce((sum, s) => sum + (s.totalProducts || 0), 0), 
       gradient: 'from-amber-400 to-orange-400',
       darkGradient: 'from-amber-500 to-orange-500',
-      icon: <Package className="h-5 w-5" />,
+      icon: <Package className="h-4 w-4 sm:h-5 sm:w-5" />,
       color: isDarkMode ? 'bg-amber-500' : 'bg-amber-400'
     }
   ];
@@ -213,7 +215,7 @@ const SupplierList = () => {
   // Quick stats
   const quickStats = [
     {
-      label: 'Avg Products per Supplier',
+      label: 'Avg Products',
       value: suppliers.length > 0 
         ? (suppliers.reduce((sum, s) => sum + (s.totalProducts || 0), 0) / suppliers.length).toFixed(1)
         : '0',
@@ -378,6 +380,7 @@ const SupplierList = () => {
     setSearch('');
     setStatusFilter('All Status');
     setCurrentPage(1);
+    setShowMobileFilters(false);
   };
   
   // Calculate pagination
@@ -582,87 +585,120 @@ const SupplierList = () => {
     .dark-modal-bg {
       background-color: rgba(0, 0, 0, 0.7);
     }
+    
+    /* Mobile Responsive Styles */
+    @media (max-width: 640px) {
+      .mobile-stack {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      
+      .mobile-full-width {
+        width: 100%;
+      }
+      
+      .mobile-text-sm {
+        font-size: 0.875rem;
+      }
+      
+      .mobile-p-2 {
+        padding: 0.5rem;
+      }
+      
+      .mobile-gap-2 {
+        gap: 0.5rem;
+      }
+      
+      .mobile-grid-cols-1 {
+        grid-template-columns: 1fr;
+      }
+      
+      .mobile-overflow-x-auto {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+    }
   `;
   
   if (isLoading) {
     return (
-      <div className={`${isDarkMode ? 'warm-bg-dark' : 'warm-bg'} min-h-screen flex items-center justify-center`}>
+      <div className={`${isDarkMode ? 'warm-bg-dark' : 'warm-bg'} min-h-screen flex items-center justify-center p-4`}>
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto mb-4"></div>
-          <p className={`text-lg font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Loading suppliers...</p>
+          <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-green-500 mx-auto mb-4"></div>
+          <p className={`text-sm sm:text-lg font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Loading suppliers...</p>
         </div>
       </div>
     );
   }
   
   return (
-    <div className={`${isDarkMode ? 'warm-bg-dark' : 'warm-bg'} transition-all duration-300`}>
+    <div className={`${isDarkMode ? 'warm-bg-dark' : 'warm-bg'} transition-all duration-300 min-h-screen`}>
       <style>{animationStyles}</style>
       
       {/* Success animation overlay */}
       {addSuccessAnimation && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
+        <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none p-4">
           <div className="text-center">
-            <div className="text-6xl mb-4 animate-success-pop">🎉</div>
-            <div className="text-xl font-bold gradient-text animate-success-pop">
+            <div className="text-4xl sm:text-6xl mb-4 animate-success-pop">🎉</div>
+            <div className="text-base sm:text-xl font-bold gradient-text animate-success-pop px-4">
               Supplier Added Successfully!
             </div>
           </div>
         </div>
       )}
       
-      {/* Header */}
-      <div className="px-6 pt-8 pb-6">
-        <div className="flex items-center justify-between">
+      {/* Header - Mobile Optimized */}
+      <div className="px-4 sm:px-6 pt-4 sm:pt-8 pb-4 sm:pb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="animate-slide-up">
-            <h1 className={`text-3xl font-bold ${isDarkMode ? 'gradient-text-dark' : 'gradient-text'}`}>
-              Suppliers Management
+            <h1 className={`text-2xl sm:text-3xl font-bold ${isDarkMode ? 'gradient-text-dark' : 'gradient-text'}`}>
+              Suppliers
             </h1>
-            <p className={`mt-2 text-lg flex items-center gap-2 ${isDarkMode ? 'text-green-300' : 'text-green-800'}`}>
-              {suppliers.length === 0 ? 'No suppliers yet. Add your first supplier!' : `Managing ${suppliers.length} suppliers`}
-              <Sparkles className="h-4 w-4 text-green-500 animate-float" />
+            <p className={`mt-1 sm:mt-2 text-sm sm:text-lg flex items-center gap-2 ${isDarkMode ? 'text-green-300' : 'text-green-800'}`}>
+              {suppliers.length === 0 ? 'No suppliers yet' : `Managing ${suppliers.length} suppliers`}
+              <Sparkles className="h-3 w-3 sm:h-4 sm:w-4 text-green-500 animate-float" />
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <button 
               onClick={handleExport}
-              className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-medium rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 animate-slide-up"
+              className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-medium rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 animate-slide-up text-sm sm:text-base"
               style={{animationDelay: '0.1s'}}
             >
-              <Download className="h-4 w-4" />
-              Export
+              <Download className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden xs:inline">Export</span>
             </button>
             {suppliers.length > 0 && (
               <button 
                 onClick={handleClearAll}
-                className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600 text-white font-medium rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 animate-slide-up"
+                className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600 text-white font-medium rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 animate-slide-up text-sm sm:text-base"
                 style={{animationDelay: '0.2s'}}
               >
-                <Trash2 className="h-4 w-4" />
-                Clear All
+                <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden xs:inline">Clear</span>
               </button>
             )}
             <button 
               ref={addButtonRef}
               onClick={() => setShowAddModal(true)}
-              className={`flex items-center gap-2 px-4 py-2.5 ${isDarkMode ? 'gradient-button-dark' : 'gradient-button'} text-white font-bold rounded-lg transition-all duration-300 shadow-xl hover:shadow-2xl hover:scale-105 animate-slide-up`}
+              className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 ${isDarkMode ? 'gradient-button-dark' : 'gradient-button'} text-white font-bold rounded-lg transition-all duration-300 shadow-xl hover:shadow-2xl hover:scale-105 animate-slide-up text-sm sm:text-base`}
               style={{animationDelay: '0.3s'}}
             >
               {isAddingSupplier ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
               ) : (
-                <Plus className="h-4 w-4" />
+                <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
               )}
-              Add Supplier
+              <span className="hidden xs:inline">Add</span>
             </button>
           </div>
         </div>
       </div>
       
       {/* Main Content */}
-      <div className="px-6 pb-8">
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="px-4 sm:px-6 pb-4 sm:pb-8">
+        {/* Stats Grid - Mobile Optimized */}
+        <div className="grid grid-cols-3 gap-2 sm:gap-6 mb-4 sm:mb-8">
           {supplierStats.map((stat, index) => (
             <div 
               key={stat.label}
@@ -670,21 +706,20 @@ const SupplierList = () => {
               style={{animationDelay: `${index * 0.1}s`}}
             >
               <div className={`${isDarkMode ? 'card-inner-dark' : 'card-inner'} group cursor-pointer transition-all duration-300 hover:scale-105`}>
-                <div className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className={`text-3xl font-bold mb-1 ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
-                        {stat.count}
-                      </div>
-                      <div className={`text-lg font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                        {stat.label}
-                      </div>
+                <div className="p-2 sm:p-6">
+                  <div className="flex flex-col items-center sm:items-start gap-1 sm:gap-0">
+                    <div className={`text-lg sm:text-3xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+                      {stat.count}
                     </div>
-                    <div className={`p-3 rounded-xl ${stat.color} text-white transform transition-transform group-hover:scale-110 group-hover:rotate-12 duration-300`}>
+                    <div className={`text-xs sm:text-lg text-center sm:text-left ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                      <span className="hidden xs:inline">{stat.label}</span>
+                      <span className="xs:hidden">{stat.label.split(' ')[0]}</span>
+                    </div>
+                    <div className={`mt-1 sm:mt-4 p-1 sm:p-3 rounded-xl ${stat.color} text-white transform transition-transform group-hover:scale-110 group-hover:rotate-12 duration-300 hidden sm:block`}>
                       {stat.icon}
                     </div>
                   </div>
-                  <div className="mt-4 h-2 rounded-full overflow-hidden">
+                  <div className="mt-2 sm:mt-4 h-1 sm:h-2 rounded-full overflow-hidden">
                     <div 
                       className={`h-full rounded-full transition-all duration-700 ease-out ${
                         animateStats ? 'animate-pulse' : ''
@@ -701,41 +736,64 @@ const SupplierList = () => {
           ))}
         </div>
         
-        {/* Search and Filters */}
+        {/* Search and Filters - Mobile Optimized */}
         {suppliers.length > 0 && (
-          <div className={`${isDarkMode ? 'card-border-dark' : 'card-border'} mb-6`}>
+          <div className={`${isDarkMode ? 'card-border-dark' : 'card-border'} mb-4 sm:mb-6`}>
             <div className={`${isDarkMode ? 'card-inner-dark' : 'card-inner'}`}>
-              <div className="p-5">
-                <div className="flex items-center gap-4">
-                  <div className="flex-1">
-                    <div className="relative">
-                      <Search className={`absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 ${isDarkMode ? 'text-green-400' : 'text-green-500'}`} />
-                      <input
-                        type="text"
-                        placeholder="Search suppliers by name, company, email, or phone..."
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        className={`pl-10 pr-4 py-3 w-full border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300 ${isDarkMode ? 'dark-input-bg dark-border-light dark-placeholder border-green-800 focus:ring-green-400' : 'border-green-200 bg-white'}`}
-                      />
-                    </div>
+              <div className="p-3 sm:p-5">
+                {/* Mobile Filter Toggle */}
+                <div className="flex sm:hidden items-center gap-2 mb-3">
+                  <div className="flex-1 relative">
+                    <Search className={`absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 ${isDarkMode ? 'text-green-400' : 'text-green-500'}`} />
+                    <input
+                      type="text"
+                      placeholder="Search..."
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      className={`pl-10 pr-4 py-2 w-full border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm ${isDarkMode ? 'dark-input-bg dark-border-light dark-placeholder border-green-800 focus:ring-green-400' : 'border-green-200 bg-white'}`}
+                    />
                   </div>
-                  <div className="flex items-center gap-3">
-                    <select 
-                      value={statusFilter}
-                      onChange={(e) => setStatusFilter(e.target.value)}
-                      className={`px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300 ${isDarkMode ? 'dark-input-bg dark-border-light dark-placeholder border-green-800 focus:ring-green-400' : 'border-green-200 bg-white'}`}
-                    >
-                      <option>All Status</option>
-                      <option>Active</option>
-                      <option>Inactive</option>
-                    </select>
-                    <button 
-                      onClick={handleResetFilters}
-                      className={`flex items-center gap-2 px-4 py-3 font-medium rounded-lg transition-all duration-300 hover:scale-105 ${isDarkMode ? 'bg-green-900 hover:bg-green-800 text-green-100' : 'bg-green-100 hover:bg-green-200 text-green-800 hover:text-green-900'}`}
-                    >
-                      <RefreshCw className="h-4 w-4" />
-                      Reset
-                    </button>
+                  <button
+                    onClick={() => setShowMobileFilters(!showMobileFilters)}
+                    className={`p-2 rounded-lg border ${isDarkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-300 bg-gray-50'}`}
+                  >
+                    <Menu className="h-5 w-5" />
+                  </button>
+                </div>
+
+                {/* Desktop Filters - Hidden on mobile unless toggled */}
+                <div className={`${showMobileFilters ? 'block' : 'hidden'} sm:block`}>
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+                    <div className="w-full sm:flex-1 hidden sm:block">
+                      <div className="relative">
+                        <Search className={`absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 ${isDarkMode ? 'text-green-400' : 'text-green-500'}`} />
+                        <input
+                          type="text"
+                          placeholder="Search suppliers by name, company, email..."
+                          value={search}
+                          onChange={(e) => setSearch(e.target.value)}
+                          className={`pl-10 pr-4 py-2 sm:py-3 w-full border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm sm:text-base ${isDarkMode ? 'dark-input-bg dark-border-light dark-placeholder border-green-800 focus:ring-green-400' : 'border-green-200 bg-white'}`}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
+                      <select 
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                        className={`px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm sm:text-base w-full sm:w-auto ${isDarkMode ? 'dark-input-bg dark-border-light dark-placeholder border-green-800 focus:ring-green-400' : 'border-green-200 bg-white'}`}
+                      >
+                        <option>All Status</option>
+                        <option>Active</option>
+                        <option>Inactive</option>
+                      </select>
+                      <button 
+                        onClick={handleResetFilters}
+                        className={`flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-3 font-medium rounded-lg transition-all duration-300 hover:scale-105 text-sm sm:text-base ${isDarkMode ? 'bg-green-900 hover:bg-green-800 text-green-100' : 'bg-green-100 hover:bg-green-200 text-green-800 hover:text-green-900'}`}
+                      >
+                        <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4" />
+                        <span className="hidden xs:inline">Reset</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -743,37 +801,94 @@ const SupplierList = () => {
           </div>
         )}
         
-        {/* Suppliers Table */}
+        {/* Suppliers Table - Mobile Optimized */}
         {suppliers.length > 0 ? (
-          <div className={`${isDarkMode ? 'card-border-dark' : 'card-border'} mb-8`}>
+          <div className={`${isDarkMode ? 'card-border-dark' : 'card-border'} mb-6 sm:mb-8`}>
             <div className={`${isDarkMode ? 'card-inner-dark' : 'card-inner'}`}>
-              <div className={`p-5 border-b ${isDarkMode ? 'border-green-800' : 'border-green-100'}`}>
-                <div className="flex items-center justify-between">
+              <div className={`p-3 sm:p-5 border-b ${isDarkMode ? 'border-green-800' : 'border-green-100'}`}>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <div>
-                    <h2 className={`text-xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>All Suppliers</h2>
-                    <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                    <h2 className={`text-base sm:text-xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>All Suppliers</h2>
+                    <p className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                       {filteredSuppliers.length === suppliers.length 
                         ? 'Showing all suppliers' 
-                        : `Filtered: ${filteredSuppliers.length} of ${suppliers.length} suppliers`}
+                        : `Filtered: ${filteredSuppliers.length} of ${suppliers.length}`}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-between sm:justify-end gap-2">
                     <button 
                       onClick={handleClearAll}
-                      className={`p-2 rounded-lg border transition-all duration-300 hover:scale-105 ${isDarkMode ? 'border-gray-700 bg-gray-800 hover:bg-red-900/30' : 'border-gray-300 bg-gray-50 hover:bg-red-50/50'}`}
+                      className={`p-1.5 sm:p-2 rounded-lg border transition-all duration-300 hover:scale-105 ${isDarkMode ? 'border-gray-700 bg-gray-800 hover:bg-red-900/30' : 'border-gray-300 bg-gray-50 hover:bg-red-50/50'}`}
                     >
-                      <Trash2 className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                      <Trash2 className="h-3 w-3 sm:h-4 sm:w-4 text-gray-600 dark:text-gray-400" />
                     </button>
-                    <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                      Showing <span className={`font-semibold ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{paginatedSuppliers.length}</span> of{' '}
+                    <div className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      <span className="hidden xs:inline">Showing </span>
+                      <span className={`font-semibold ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{paginatedSuppliers.length}</span>
+                      <span className="hidden xs:inline"> of </span>
                       <span className={`font-semibold ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{filteredSuppliers.length}</span>
                     </div>
                   </div>
                 </div>
               </div>
               
-              <div className="overflow-x-auto">
-                <table className="w-full">
+              {/* Mobile Cards - Optimized for all small screens */}
+              <div className="sm:hidden space-y-3 p-2">
+                {paginatedSuppliers.map((supplier) => (
+                  <div key={supplier.id} className={`p-3 rounded-lg ${isDarkMode ? 'bg-gray-800/60' : 'bg-white'} border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <div className="h-8 w-8 rounded-full bg-gradient-to-r from-green-400 to-emerald-400 flex items-center justify-center text-white text-sm">
+                          {getAvatarEmoji(supplier.company)}
+                        </div>
+                        <div>
+                          <div className={`font-medium text-sm ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{supplier.name}</div>
+                          <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{supplier.company}</div>
+                        </div>
+                      </div>
+                      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                        supplier.status === 'active' 
+                          ? (isDarkMode ? 'bg-emerald-900/30 text-emerald-300' : 'bg-emerald-50 text-emerald-700')
+                          : (isDarkMode ? 'bg-amber-900/30 text-amber-300' : 'bg-amber-50 text-amber-700')
+                      }`}>
+                        {supplier.status === 'active' ? (
+                          <CheckCircle className="h-2 w-2" />
+                        ) : (
+                          <AlertCircle className="h-2 w-2" />
+                        )}
+                        <span className="capitalize">{supplier.status}</span>
+                      </span>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-2 mb-2 text-xs">
+                      <div className={`${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                        <Mail className="h-3 w-3 inline mr-1" />
+                        {supplier.email.length > 20 ? supplier.email.substring(0, 20) + '...' : supplier.email}
+                      </div>
+                      <div className={`${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                        <Package className="h-3 w-3 inline mr-1" />
+                        {supplier.totalProducts} products
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center justify-end gap-2 mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                      <button onClick={() => { setSelectedSupplier(supplier); setShowViewModal(true); }} className="p-2 rounded-lg hover:bg-green-50/50">
+                        <Eye className={`h-4 w-4 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`} />
+                      </button>
+                      <button onClick={() => { setSelectedSupplier(supplier); setShowEditModal(true); }} className="p-2 rounded-lg hover:bg-green-50/50">
+                        <Edit className="h-4 w-4 text-green-600 dark:text-green-400" />
+                      </button>
+                      <button onClick={() => { setSelectedSupplier(supplier); setShowDeleteModal(true); }} className="p-2 rounded-lg hover:bg-red-50/50">
+                        <Trash2 className="h-4 w-4 text-red-500 dark:text-red-400" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop table - Hidden on small screens */}
+              <div className="hidden sm:block overflow-x-auto">
+                <table className="w-full min-w-[800px]">
                   <thead className={`${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
                     <tr>
                       <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
@@ -890,40 +1005,75 @@ const SupplierList = () => {
                 </table>
               </div>
               
-              {/* Pagination */}
-              <div className={`p-5 border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-300'}`}>
-                <div className="flex items-center justify-between">
-                  <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-700'}`}>
+              {/* Pagination - Mobile Optimized */}
+              <div className={`p-3 sm:p-5 border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-300'}`}>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <p className={`text-xs sm:text-sm text-center sm:text-left ${isDarkMode ? 'text-gray-400' : 'text-gray-700'}`}>
                     Page <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{currentPage}</span> of{' '}
                     <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{totalPages}</span>
                   </p>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-center sm:justify-end gap-1 sm:gap-2">
                     <button 
                       onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                      className={`p-2 rounded-lg border transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed ${isDarkMode ? 'border-gray-700 bg-gray-800 hover:bg-green-900/30 text-gray-300 hover:text-gray-100' : 'border-gray-300 bg-gray-50 hover:bg-green-50/50 text-gray-700 hover:text-gray-900'}`}
+                      className={`p-1.5 sm:p-2 rounded-lg border transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed ${isDarkMode ? 'border-gray-700 bg-gray-800 hover:bg-green-900/30 text-gray-300 hover:text-gray-100' : 'border-gray-300 bg-gray-50 hover:bg-green-50/50 text-gray-700 hover:text-gray-900'}`}
                       disabled={currentPage === 1}
                     >
-                      <ChevronLeft className="h-4 w-4" />
+                      <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4" />
                     </button>
-                    {[...Array(totalPages)].map((_, index) => (
-                      <button
-                        key={index + 1}
-                        onClick={() => setCurrentPage(index + 1)}
-                        className={`px-3 py-2 rounded-lg font-medium transition-all duration-300 hover:scale-105 text-sm ${
-                          currentPage === index + 1
-                            ? (isDarkMode ? 'page-number-active-dark' : 'page-number-active')
-                            : (isDarkMode ? 'border border-gray-700 bg-gray-800 text-gray-300 hover:bg-green-900/30 hover:text-gray-100' : 'border border-gray-300 bg-gray-50 text-gray-700 hover:bg-green-50/50 hover:text-gray-900')
-                        }`}
-                      >
-                        {index + 1}
-                      </button>
-                    ))}
+                    
+                    {/* Mobile: Show fewer page numbers */}
+                    <div className="flex sm:hidden gap-1">
+                      {[...Array(Math.min(3, totalPages))].map((_, index) => {
+                        let pageNum;
+                        if (totalPages <= 3) {
+                          pageNum = index + 1;
+                        } else if (currentPage === 1) {
+                          pageNum = index + 1;
+                        } else if (currentPage === totalPages) {
+                          pageNum = totalPages - 2 + index;
+                        } else {
+                          pageNum = currentPage - 1 + index;
+                        }
+                        
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => setCurrentPage(pageNum)}
+                            className={`px-2 py-1 rounded-lg font-medium transition-all duration-300 text-xs ${
+                              currentPage === pageNum
+                                ? (isDarkMode ? 'page-number-active-dark' : 'page-number-active')
+                                : (isDarkMode ? 'border border-gray-700 bg-gray-800 text-gray-300 hover:bg-green-900/30' : 'border border-gray-300 bg-gray-50 text-gray-700 hover:bg-green-50/50')
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    
+                    {/* Desktop: Show all page numbers */}
+                    <div className="hidden sm:flex gap-2">
+                      {[...Array(totalPages)].map((_, index) => (
+                        <button
+                          key={index + 1}
+                          onClick={() => setCurrentPage(index + 1)}
+                          className={`px-3 py-2 rounded-lg font-medium transition-all duration-300 hover:scale-105 text-sm ${
+                            currentPage === index + 1
+                              ? (isDarkMode ? 'page-number-active-dark' : 'page-number-active')
+                              : (isDarkMode ? 'border border-gray-700 bg-gray-800 text-gray-300 hover:bg-green-900/30 hover:text-gray-100' : 'border border-gray-300 bg-gray-50 text-gray-700 hover:bg-green-50/50 hover:text-gray-900')
+                          }`}
+                        >
+                          {index + 1}
+                        </button>
+                      ))}
+                    </div>
+                    
                     <button 
                       onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                      className={`p-2 rounded-lg border transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed ${isDarkMode ? 'border-gray-700 bg-gray-800 hover:bg-green-900/30 text-gray-300 hover:text-gray-100' : 'border-gray-300 bg-gray-50 hover:bg-green-50/50 text-gray-700 hover:text-gray-900'}`}
+                      className={`p-1.5 sm:p-2 rounded-lg border transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed ${isDarkMode ? 'border-gray-700 bg-gray-800 hover:bg-green-900/30 text-gray-300 hover:text-gray-100' : 'border-gray-300 bg-gray-50 hover:bg-green-50/50 text-gray-700 hover:text-gray-900'}`}
                       disabled={currentPage === totalPages}
                     >
-                      <ChevronRight className="h-4 w-4" />
+                      <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4" />
                     </button>
                   </div>
                 </div>
@@ -931,25 +1081,25 @@ const SupplierList = () => {
             </div>
           </div>
         ) : (
-          /* Empty State */
+          /* Empty State - Mobile Optimized */
           <div className={`${isDarkMode ? 'card-border-dark' : 'card-border'} mb-8`}>
             <div className={`${isDarkMode ? 'card-inner-dark' : 'card-inner'}`}>
-              <div className="p-8 text-center">
-                <div className="mx-auto w-20 h-20 rounded-full bg-gradient-to-r from-green-200/30 to-emerald-200/30 dark:from-green-900/30 dark:to-emerald-900/30 flex items-center justify-center mb-4 animate-float">
-                  <Truck className="h-10 w-10 text-green-500 dark:text-green-400" />
+              <div className="p-4 sm:p-8 text-center">
+                <div className="mx-auto w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-r from-green-200/30 to-emerald-200/30 dark:from-green-900/30 dark:to-emerald-900/30 flex items-center justify-center mb-4 animate-float">
+                  <Truck className="h-6 w-6 sm:h-10 sm:w-10 text-green-500 dark:text-green-400" />
                 </div>
-                <h3 className={`text-xl font-bold mb-2 ${isDarkMode ? 'gradient-text-dark' : 'gradient-text'}`}>
+                <h3 className={`text-lg sm:text-xl font-bold mb-2 ${isDarkMode ? 'gradient-text-dark' : 'gradient-text'}`}>
                   No Suppliers Yet
                 </h3>
-                <p className={`mb-6 max-w-md mx-auto ${isDarkMode ? 'text-green-300/70' : 'text-green-800/70'}`}>
+                <p className={`text-sm sm:text-base mb-6 max-w-md mx-auto px-4 ${isDarkMode ? 'text-green-300/70' : 'text-green-800/70'}`}>
                   Get started by adding your first supplier. Manage vendors, track inventory, and streamline procurement.
                 </p>
                 <button 
                   ref={addButtonRef}
                   onClick={() => setShowAddModal(true)}
-                  className={`inline-flex items-center gap-2 px-6 py-3 ${isDarkMode ? 'gradient-button-dark' : 'gradient-button'} text-white font-bold rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105`}
+                  className={`inline-flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 ${isDarkMode ? 'gradient-button-dark' : 'gradient-button'} text-white font-bold rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 text-sm sm:text-base`}
                 >
-                  <Plus className="h-5 w-5" />
+                  <Plus className="h-4 w-4 sm:h-5 sm:w-5" />
                   Add Your First Supplier
                 </button>
               </div>
@@ -957,21 +1107,21 @@ const SupplierList = () => {
           </div>
         )}
         
-        {/* Quick Stats */}
+        {/* Quick Stats - Mobile Optimized */}
         {suppliers.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             <div className={`${isDarkMode ? 'card-border-dark' : 'card-border'}`}>
               <div className={`${isDarkMode ? 'card-inner-dark' : 'card-inner'}`}>
-                <div className="p-6">
-                  <h3 className={`text-lg font-bold mb-4 ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Supplier Insights</h3>
-                  <div className="space-y-4">
+                <div className="p-4 sm:p-6">
+                  <h3 className={`text-base sm:text-lg font-bold mb-3 sm:mb-4 ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Supplier Insights</h3>
+                  <div className="space-y-3">
                     {quickStats.map((stat, index) => (
-                      <div key={stat.label} className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-green-50/30 to-emerald-50/30 dark:from-green-900/20 dark:to-emerald-900/20">
-                        <div className="flex items-center gap-3">
-                          <stat.icon className={`h-5 w-5 ${stat.color}`} />
-                          <span className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>{stat.label}</span>
+                      <div key={stat.label} className="flex items-center justify-between p-2 sm:p-3 rounded-lg bg-gradient-to-r from-green-50/30 to-emerald-50/30 dark:from-green-900/20 dark:to-emerald-900/20">
+                        <div className="flex items-center gap-2 sm:gap-3">
+                          <stat.icon className={`h-4 w-4 sm:h-5 sm:w-5 ${stat.color}`} />
+                          <span className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>{stat.label}</span>
                         </div>
-                        <span className={`font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{stat.value}</span>
+                        <span className={`font-bold text-sm sm:text-base ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{stat.value}</span>
                       </div>
                     ))}
                   </div>
@@ -981,21 +1131,21 @@ const SupplierList = () => {
             
             <div className={`${isDarkMode ? 'card-border-dark' : 'card-border'}`}>
               <div className={`${isDarkMode ? 'card-inner-dark' : 'card-inner'}`}>
-                <div className="p-6">
-                  <h3 className={`text-lg font-bold mb-4 ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Quick Actions</h3>
-                  <div className="space-y-3">
+                <div className="p-4 sm:p-6">
+                  <h3 className={`text-base sm:text-lg font-bold mb-3 sm:mb-4 ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Quick Actions</h3>
+                  <div className="space-y-2 sm:space-y-3">
                     <button 
                       onClick={() => setShowAddModal(true)}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 text-sm"
+                      className="w-full flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-3 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 text-xs sm:text-sm"
                     >
-                      <Plus className="h-4 w-4" />
+                      <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
                       Add New Supplier
                     </button>
                     <button 
                       onClick={handleExport}
-                      className={`w-full flex items-center justify-center gap-2 px-4 py-3 font-medium rounded-lg border transition-all duration-300 hover:scale-105 text-sm ${isDarkMode ? 'bg-gray-800 hover:bg-green-900/30 text-gray-300 hover:text-gray-100 border-gray-700' : 'bg-gray-50 hover:bg-green-50 text-gray-700 hover:text-gray-900 border-gray-300'}`}
+                      className={`w-full flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-3 font-medium rounded-lg border transition-all duration-300 hover:scale-105 text-xs sm:text-sm ${isDarkMode ? 'bg-gray-800 hover:bg-green-900/30 text-gray-300 hover:text-gray-100 border-gray-700' : 'bg-gray-50 hover:bg-green-50 text-gray-700 hover:text-gray-900 border-gray-300'}`}
                     >
-                      <Download className="h-4 w-4" />
+                      <Download className="h-3 w-3 sm:h-4 sm:w-4" />
                       Export Suppliers
                     </button>
                   </div>
@@ -1006,34 +1156,34 @@ const SupplierList = () => {
         )}
       </div>
       
-      {/* Delete Modal */}
+      {/* Delete Modal - Mobile Optimized */}
       {showDeleteModal && selectedSupplier && (
-        <div className={`fixed inset-0 z-50 flex items-center justify-center ${isDarkMode ? 'dark-modal-bg' : 'bg-black/50'} backdrop-blur-sm p-4`}>
-          <div className={`${isDarkMode ? 'card-border-dark' : 'card-border'} w-full max-w-md`}>
+        <div className={`fixed inset-0 z-50 flex items-center justify-center ${isDarkMode ? 'dark-modal-bg' : 'bg-black/50'} backdrop-blur-sm p-2 sm:p-4`}>
+          <div className={`${isDarkMode ? 'card-border-dark' : 'card-border'} w-full max-w-[95%] sm:max-w-md`}>
             <div className={`${isDarkMode ? 'card-inner-dark' : 'card-inner'}`}>
-              <div className="p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="h-10 w-10 rounded-xl bg-gradient-to-r from-red-500/20 to-rose-500/20 dark:from-red-500/30 dark:to-rose-500/30 flex items-center justify-center">
-                    <AlertCircle className="h-5 w-5 text-red-500 dark:text-red-400" />
+              <div className="p-4 sm:p-6">
+                <div className="flex items-center gap-2 sm:gap-3 mb-4">
+                  <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-xl bg-gradient-to-r from-red-500/20 to-rose-500/20 dark:from-red-500/30 dark:to-rose-500/30 flex items-center justify-center">
+                    <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-red-500 dark:text-red-400" />
                   </div>
                   <div>
-                    <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Delete Supplier</h3>
-                    <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>This action cannot be undone</p>
+                    <h3 className={`text-base sm:text-lg font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Delete Supplier</h3>
+                    <p className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>This action cannot be undone</p>
                   </div>
                 </div>
                 
-                <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-6`}>
+                <p className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-4 sm:mb-6`}>
                   Are you sure you want to delete <span className={`font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>"{selectedSupplier.name}"</span>? 
                   All supplier data will be permanently removed.
                 </p>
                 
-                <div className="flex justify-end gap-3">
+                <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
                   <button
                     onClick={() => {
                       setShowDeleteModal(false);
                       setSelectedSupplier(null);
                     }}
-                    className={`px-4 py-2.5 font-medium rounded-lg border transition-all duration-300 hover:scale-105 ${isDarkMode ? 'bg-gray-800 hover:bg-green-900/30 text-gray-300 hover:text-gray-100 border-gray-700' : 'bg-gray-50 hover:bg-green-50/50 text-gray-700 hover:text-gray-900 border-gray-300'}`}
+                    className={`px-3 sm:px-4 py-2 sm:py-2.5 font-medium rounded-lg border transition-all duration-300 hover:scale-105 text-xs sm:text-sm ${isDarkMode ? 'bg-gray-800 hover:bg-green-900/30 text-gray-300 hover:text-gray-100 border-gray-700' : 'bg-gray-50 hover:bg-green-50/50 text-gray-700 hover:text-gray-900 border-gray-300'}`}
                   >
                     Cancel
                   </button>
@@ -1045,9 +1195,9 @@ const SupplierList = () => {
                         setDeleteAnimation(false);
                       }, 500);
                     }}
-                    className="px-4 py-2.5 bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white font-medium rounded-lg transition-all duration-300 shadow-sm hover:shadow hover:scale-105"
+                    className="px-3 sm:px-4 py-2 sm:py-2.5 bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white font-medium rounded-lg transition-all duration-300 shadow-sm hover:shadow hover:scale-105 text-xs sm:text-sm"
                   >
-                    <Trash2 className="inline h-4 w-4 mr-2" />
+                    <Trash2 className="inline h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                     Delete Supplier
                   </button>
                 </div>
@@ -1057,106 +1207,106 @@ const SupplierList = () => {
         </div>
       )}
       
-      {/* Add Modal */}
+      {/* Add Modal - Mobile Optimized */}
       {showAddModal && (
-        <div className={`fixed inset-0 z-50 flex items-center justify-center ${isDarkMode ? 'dark-modal-bg' : 'bg-black/50'} backdrop-blur-sm p-4`}>
-          <div className={`${isDarkMode ? 'card-border-dark' : 'card-border'} w-full max-w-md`}>
-            <div className={`${isDarkMode ? 'card-inner-dark' : 'card-inner'}`}>
-              <div className="p-6 max-h-[85vh] overflow-y-auto">
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-xl bg-gradient-to-r from-green-500/20 to-emerald-500/20 dark:from-green-500/30 dark:to-emerald-500/30 flex items-center justify-center">
-                      <Plus className="h-5 w-5 text-green-500 dark:text-green-400" />
+        <div className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center ${isDarkMode ? 'dark-modal-bg' : 'bg-black/50'} backdrop-blur-sm p-0 sm:p-4`}>
+          <div className={`${isDarkMode ? 'card-border-dark' : 'card-border'} w-full sm:max-w-md md:max-w-lg`}>
+            <div className={`${isDarkMode ? 'card-inner-dark' : 'card-inner'} max-h-[90vh] overflow-y-auto`}>
+              <div className="p-4 sm:p-6">
+                <div className="flex items-center justify-between mb-4 sm:mb-6">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-xl bg-gradient-to-r from-green-500/20 to-emerald-500/20 dark:from-green-500/30 dark:to-emerald-500/30 flex items-center justify-center">
+                      <Plus className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 dark:text-green-400" />
                     </div>
                     <div>
-                      <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Add New Supplier</h3>
-                      <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Create a new supplier entry</p>
+                      <h3 className={`text-base sm:text-lg font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Add New Supplier</h3>
+                      <p className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Create a new supplier entry</p>
                     </div>
                   </div>
                   <button
                     onClick={() => setShowAddModal(false)}
-                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                    className="p-1.5 sm:p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                   >
-                    <X className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+                    <X className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500 dark:text-gray-400" />
                   </button>
                 </div>
                 
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   <div>
-                    <label className={`block text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    <label className={`block text-xs sm:text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                       Contact Name *
                     </label>
                     <input
                       type="text"
                       value={newSupplier.name}
                       onChange={(e) => setNewSupplier(prev => ({...prev, name: e.target.value}))}
-                      className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${isDarkMode ? 'dark-input-bg dark-border-light dark-placeholder' : 'border-gray-300'}`}
+                      className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${isDarkMode ? 'dark-input-bg dark-border-light dark-placeholder' : 'border-gray-300'}`}
                       placeholder="Enter contact name"
                       required
                     />
                   </div>
                   
                   <div>
-                    <label className={`block text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    <label className={`block text-xs sm:text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                       Company Name
                     </label>
                     <input
                       type="text"
                       value={newSupplier.company}
                       onChange={(e) => setNewSupplier(prev => ({...prev, company: e.target.value}))}
-                      className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${isDarkMode ? 'dark-input-bg dark-border-light dark-placeholder' : 'border-gray-300'}`}
+                      className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${isDarkMode ? 'dark-input-bg dark-border-light dark-placeholder' : 'border-gray-300'}`}
                       placeholder="Enter company name"
                     />
                   </div>
                   
                   <div>
-                    <label className={`block text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    <label className={`block text-xs sm:text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                       Email Address *
                     </label>
                     <input
                       type="email"
                       value={newSupplier.email}
                       onChange={(e) => setNewSupplier(prev => ({...prev, email: e.target.value}))}
-                      className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${isDarkMode ? 'dark-input-bg dark-border-light dark-placeholder' : 'border-gray-300'}`}
+                      className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${isDarkMode ? 'dark-input-bg dark-border-light dark-placeholder' : 'border-gray-300'}`}
                       placeholder="Enter email address"
                       required
                     />
                   </div>
                   
                   <div>
-                    <label className={`block text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    <label className={`block text-xs sm:text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                       Phone Number
                     </label>
                     <input
                       type="tel"
                       value={newSupplier.phone}
                       onChange={(e) => setNewSupplier(prev => ({...prev, phone: e.target.value}))}
-                      className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${isDarkMode ? 'dark-input-bg dark-border-light dark-placeholder' : 'border-gray-300'}`}
+                      className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${isDarkMode ? 'dark-input-bg dark-border-light dark-placeholder' : 'border-gray-300'}`}
                       placeholder="Enter phone number"
                     />
                   </div>
                   
                   <div>
-                    <label className={`block text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    <label className={`block text-xs sm:text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                       Address
                     </label>
                     <textarea
                       value={newSupplier.address}
                       onChange={(e) => setNewSupplier(prev => ({...prev, address: e.target.value}))}
-                      className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${isDarkMode ? 'dark-input-bg dark-border-light dark-placeholder' : 'border-gray-300'}`}
-                      rows="3"
+                      className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${isDarkMode ? 'dark-input-bg dark-border-light dark-placeholder' : 'border-gray-300'}`}
+                      rows="2"
                       placeholder="Enter address"
                     />
                   </div>
                   
                   <div>
-                    <label className={`block text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    <label className={`block text-xs sm:text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                       Status
                     </label>
                     <select
                       value={newSupplier.status}
                       onChange={(e) => setNewSupplier(prev => ({...prev, status: e.target.value}))}
-                      className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${isDarkMode ? 'dark-input-bg dark-border-light dark-placeholder' : 'border-gray-300'}`}
+                      className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${isDarkMode ? 'dark-input-bg dark-border-light dark-placeholder' : 'border-gray-300'}`}
                     >
                       <option value="active">Active</option>
                       <option value="inactive">Inactive</option>
@@ -1164,23 +1314,23 @@ const SupplierList = () => {
                   </div>
                   
                   <div>
-                    <label className={`block text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    <label className={`block text-xs sm:text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                       Notes
                     </label>
                     <textarea
                       value={newSupplier.notes}
                       onChange={(e) => setNewSupplier(prev => ({...prev, notes: e.target.value}))}
-                      className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${isDarkMode ? 'dark-input-bg dark-border-light dark-placeholder' : 'border-gray-300'}`}
-                      rows="3"
+                      className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${isDarkMode ? 'dark-input-bg dark-border-light dark-placeholder' : 'border-gray-300'}`}
+                      rows="2"
                       placeholder="Enter any notes"
                     />
                   </div>
                 </div>
                 
-                <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-gray-300 dark:border-gray-700">
+                <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-gray-300 dark:border-gray-700">
                   <button
                     onClick={() => setShowAddModal(false)}
-                    className={`px-4 py-2.5 font-medium rounded-lg transition-colors ${isDarkMode ? 'bg-gray-800 hover:bg-gray-700 text-gray-300' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}
+                    className={`px-3 sm:px-4 py-2 sm:py-2.5 font-medium rounded-lg transition-colors text-xs sm:text-sm ${isDarkMode ? 'bg-gray-800 hover:bg-gray-700 text-gray-300' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}
                   >
                     Cancel
                   </button>
@@ -1188,12 +1338,12 @@ const SupplierList = () => {
                     ref={addModalButtonRef}
                     onClick={handleAddSupplier}
                     disabled={isProcessing}
-                    className={`px-4 py-2.5 ${isDarkMode ? 'gradient-button-dark' : 'gradient-button'} text-white font-bold rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 disabled:opacity-50`}
+                    className={`px-3 sm:px-4 py-2 sm:py-2.5 ${isDarkMode ? 'gradient-button-dark' : 'gradient-button'} text-white font-bold rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 disabled:opacity-50 text-xs sm:text-sm`}
                   >
                     {isProcessing ? (
-                      <Loader2 className="inline h-4 w-4 mr-2 animate-spin" />
+                      <Loader2 className="inline h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 animate-spin" />
                     ) : (
-                      <Save className="inline h-4 w-4 mr-2" />
+                      <Save className="inline h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                     )}
                     {isProcessing ? 'Adding...' : 'Add Supplier'}
                   </button>
@@ -1204,20 +1354,20 @@ const SupplierList = () => {
         </div>
       )}
       
-      {/* Edit Modal */}
+      {/* Edit Modal - Mobile Optimized */}
       {showEditModal && selectedSupplier && (
-        <div className={`fixed inset-0 z-50 flex items-center justify-center ${isDarkMode ? 'dark-modal-bg' : 'bg-black/50'} backdrop-blur-sm p-4`}>
-          <div className={`${isDarkMode ? 'card-border-dark' : 'card-border'} w-full max-w-md`}>
-            <div className={`${isDarkMode ? 'card-inner-dark' : 'card-inner'}`}>
-              <div className="p-6 max-h-[85vh] overflow-y-auto">
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-xl bg-gradient-to-r from-green-500/20 to-emerald-500/20 dark:from-green-500/30 dark:to-emerald-500/30 flex items-center justify-center">
-                      <Edit className="h-5 w-5 text-green-500 dark:text-green-400" />
+        <div className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center ${isDarkMode ? 'dark-modal-bg' : 'bg-black/50'} backdrop-blur-sm p-0 sm:p-4`}>
+          <div className={`${isDarkMode ? 'card-border-dark' : 'card-border'} w-full sm:max-w-md md:max-w-lg`}>
+            <div className={`${isDarkMode ? 'card-inner-dark' : 'card-inner'} max-h-[90vh] overflow-y-auto`}>
+              <div className="p-4 sm:p-6">
+                <div className="flex items-center justify-between mb-4 sm:mb-6">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-xl bg-gradient-to-r from-green-500/20 to-emerald-500/20 dark:from-green-500/30 dark:to-emerald-500/30 flex items-center justify-center">
+                      <Edit className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 dark:text-green-400" />
                     </div>
                     <div>
-                      <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Edit Supplier</h3>
-                      <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Update supplier information</p>
+                      <h3 className={`text-base sm:text-lg font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Edit Supplier</h3>
+                      <p className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Update supplier information</p>
                     </div>
                   </div>
                   <button
@@ -1225,83 +1375,83 @@ const SupplierList = () => {
                       setShowEditModal(false);
                       setSelectedSupplier(null);
                     }}
-                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                    className="p-1.5 sm:p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                   >
-                    <X className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+                    <X className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500 dark:text-gray-400" />
                   </button>
                 </div>
                 
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   <div>
-                    <label className={`block text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    <label className={`block text-xs sm:text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                       Contact Name *
                     </label>
                     <input
                       type="text"
                       value={selectedSupplier.name}
                       onChange={(e) => setSelectedSupplier(prev => ({...prev, name: e.target.value}))}
-                      className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${isDarkMode ? 'dark-input-bg dark-border-light dark-placeholder' : 'border-gray-300'}`}
+                      className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${isDarkMode ? 'dark-input-bg dark-border-light dark-placeholder' : 'border-gray-300'}`}
                       required
                     />
                   </div>
                   
                   <div>
-                    <label className={`block text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    <label className={`block text-xs sm:text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                       Company Name
                     </label>
                     <input
                       type="text"
                       value={selectedSupplier.company}
                       onChange={(e) => setSelectedSupplier(prev => ({...prev, company: e.target.value}))}
-                      className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${isDarkMode ? 'dark-input-bg dark-border-light dark-placeholder' : 'border-gray-300'}`}
+                      className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${isDarkMode ? 'dark-input-bg dark-border-light dark-placeholder' : 'border-gray-300'}`}
                     />
                   </div>
                   
                   <div>
-                    <label className={`block text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    <label className={`block text-xs sm:text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                       Email Address *
                     </label>
                     <input
                       type="email"
                       value={selectedSupplier.email}
                       onChange={(e) => setSelectedSupplier(prev => ({...prev, email: e.target.value}))}
-                      className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${isDarkMode ? 'dark-input-bg dark-border-light dark-placeholder' : 'border-gray-300'}`}
+                      className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${isDarkMode ? 'dark-input-bg dark-border-light dark-placeholder' : 'border-gray-300'}`}
                       required
                     />
                   </div>
                   
                   <div>
-                    <label className={`block text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    <label className={`block text-xs sm:text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                       Phone Number
                     </label>
                     <input
                       type="tel"
                       value={selectedSupplier.phone}
                       onChange={(e) => setSelectedSupplier(prev => ({...prev, phone: e.target.value}))}
-                      className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${isDarkMode ? 'dark-input-bg dark-border-light dark-placeholder' : 'border-gray-300'}`}
+                      className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${isDarkMode ? 'dark-input-bg dark-border-light dark-placeholder' : 'border-gray-300'}`}
                     />
                   </div>
                   
                   <div>
-                    <label className={`block text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    <label className={`block text-xs sm:text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                       Address
                     </label>
                     <textarea
                       value={selectedSupplier.address}
                       onChange={(e) => setSelectedSupplier(prev => ({...prev, address: e.target.value}))}
-                      className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${isDarkMode ? 'dark-input-bg dark-border-light dark-placeholder' : 'border-gray-300'}`}
-                      rows="3"
+                      className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${isDarkMode ? 'dark-input-bg dark-border-light dark-placeholder' : 'border-gray-300'}`}
+                      rows="2"
                     />
                   </div>
                   
                   <div>
-                    <label className={`block text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    <label className={`block text-xs sm:text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                       Status
                     </label>
                     <select
                       value={selectedSupplier.status}
                       onChange={(e) => setSelectedSupplier(prev => ({...prev, status: e.target.value}))}
-                      className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${isDarkMode ? 'dark-input-bg dark-border-light dark-placeholder' : 'border-gray-300'}`}
+                      className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${isDarkMode ? 'dark-input-bg dark-border-light dark-placeholder' : 'border-gray-300'}`}
                     >
                       <option value="active">Active</option>
                       <option value="inactive">Inactive</option>
@@ -1309,25 +1459,25 @@ const SupplierList = () => {
                   </div>
                   
                   <div>
-                    <label className={`block text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    <label className={`block text-xs sm:text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                       Notes
                     </label>
                     <textarea
                       value={selectedSupplier.notes}
                       onChange={(e) => setSelectedSupplier(prev => ({...prev, notes: e.target.value}))}
-                      className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${isDarkMode ? 'dark-input-bg dark-border-light dark-placeholder' : 'border-gray-300'}`}
-                      rows="3"
+                      className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${isDarkMode ? 'dark-input-bg dark-border-light dark-placeholder' : 'border-gray-300'}`}
+                      rows="2"
                     />
                   </div>
                 </div>
                 
-                <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-gray-300 dark:border-gray-700">
+                <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-gray-300 dark:border-gray-700">
                   <button
                     onClick={() => {
                       setShowEditModal(false);
                       setSelectedSupplier(null);
                     }}
-                    className={`px-4 py-2.5 font-medium rounded-lg transition-colors ${isDarkMode ? 'bg-gray-800 hover:bg-gray-700 text-gray-300' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}
+                    className={`px-3 sm:px-4 py-2 sm:py-2.5 font-medium rounded-lg transition-colors text-xs sm:text-sm ${isDarkMode ? 'bg-gray-800 hover:bg-gray-700 text-gray-300' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}
                   >
                     Cancel
                   </button>
@@ -1335,12 +1485,12 @@ const SupplierList = () => {
                     ref={editModalButtonRef}
                     onClick={handleEditSupplier}
                     disabled={isProcessing}
-                    className={`px-4 py-2.5 ${isDarkMode ? 'gradient-button-dark' : 'gradient-button'} text-white font-bold rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 disabled:opacity-50`}
+                    className={`px-3 sm:px-4 py-2 sm:py-2.5 ${isDarkMode ? 'gradient-button-dark' : 'gradient-button'} text-white font-bold rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 disabled:opacity-50 text-xs sm:text-sm`}
                   >
                     {isProcessing ? (
-                      <Loader2 className="inline h-4 w-4 mr-2 animate-spin" />
+                      <Loader2 className="inline h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 animate-spin" />
                     ) : (
-                      <Save className="inline h-4 w-4 mr-2" />
+                      <Save className="inline h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                     )}
                     {isProcessing ? 'Updating...' : 'Update Supplier'}
                   </button>
@@ -1351,20 +1501,20 @@ const SupplierList = () => {
         </div>
       )}
       
-      {/* View Modal */}
+      {/* View Modal - Mobile Optimized */}
       {showViewModal && selectedSupplier && (
-        <div className={`fixed inset-0 z-50 flex items-center justify-center ${isDarkMode ? 'dark-modal-bg' : 'bg-black/50'} backdrop-blur-sm p-4`}>
-          <div className={`${isDarkMode ? 'card-border-dark' : 'card-border'} w-full max-w-md`}>
-            <div className={`${isDarkMode ? 'card-inner-dark' : 'card-inner'}`}>
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-3">
-                    <div className="h-12 w-12 rounded-full bg-gradient-to-r from-green-400 to-emerald-400 flex items-center justify-center text-white text-xl">
+        <div className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center ${isDarkMode ? 'dark-modal-bg' : 'bg-black/50'} backdrop-blur-sm p-0 sm:p-4`}>
+          <div className={`${isDarkMode ? 'card-border-dark' : 'card-border'} w-full sm:max-w-md md:max-w-lg`}>
+            <div className={`${isDarkMode ? 'card-inner-dark' : 'card-inner'} max-h-[90vh] overflow-y-auto`}>
+              <div className="p-4 sm:p-6">
+                <div className="flex items-center justify-between mb-4 sm:mb-6">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-gradient-to-r from-green-400 to-emerald-400 flex items-center justify-center text-white text-base sm:text-xl">
                       {getAvatarEmoji(selectedSupplier.company)}
                     </div>
                     <div>
-                      <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{selectedSupplier.name}</h3>
-                      <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{selectedSupplier.company}</p>
+                      <h3 className={`text-base sm:text-lg font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{selectedSupplier.name}</h3>
+                      <p className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{selectedSupplier.company}</p>
                     </div>
                   </div>
                   <button
@@ -1372,51 +1522,57 @@ const SupplierList = () => {
                       setShowViewModal(false);
                       setSelectedSupplier(null);
                     }}
-                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                    className="p-1.5 sm:p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                   >
-                    <X className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+                    <X className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500 dark:text-gray-400" />
                   </button>
                 </div>
                 
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className={`p-3 rounded-lg ${isDarkMode ? 'bg-gray-700/50' : 'bg-green-50/50'}`}>
-                      <div className="flex items-center gap-2 mb-1">
-                        <Mail className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                <div className="space-y-3 sm:space-y-4">
+                  <div className="grid grid-cols-2 gap-2 sm:gap-4">
+                    <div className={`p-2 sm:p-3 rounded-lg ${isDarkMode ? 'bg-gray-700/50' : 'bg-green-50/50'}`}>
+                      <div className="flex items-center gap-1 sm:gap-2 mb-1">
+                        <Mail className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500 dark:text-gray-400" />
                         <div className={`text-xs font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Email</div>
                       </div>
-                      <div className={`text-sm ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{selectedSupplier.email}</div>
+                      <div className={`text-xs sm:text-sm break-words ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+                        {selectedSupplier.email.length > 25 ? selectedSupplier.email.substring(0, 25) + '...' : selectedSupplier.email}
+                      </div>
                     </div>
                     
-                    <div className={`p-3 rounded-lg ${isDarkMode ? 'bg-gray-700/50' : 'bg-green-50/50'}`}>
-                      <div className="flex items-center gap-2 mb-1">
-                        <Phone className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                    <div className={`p-2 sm:p-3 rounded-lg ${isDarkMode ? 'bg-gray-700/50' : 'bg-green-50/50'}`}>
+                      <div className="flex items-center gap-1 sm:gap-2 mb-1">
+                        <Phone className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500 dark:text-gray-400" />
                         <div className={`text-xs font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Phone</div>
                       </div>
-                      <div className={`text-sm ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{selectedSupplier.phone || 'Not provided'}</div>
+                      <div className={`text-xs sm:text-sm break-words ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+                        {selectedSupplier.phone || 'Not provided'}
+                      </div>
                     </div>
                   </div>
                   
-                  <div className={`p-3 rounded-lg ${isDarkMode ? 'bg-gray-700/50' : 'bg-green-50/50'}`}>
-                    <div className="flex items-center gap-2 mb-1">
-                      <MapPin className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                  <div className={`p-2 sm:p-3 rounded-lg ${isDarkMode ? 'bg-gray-700/50' : 'bg-green-50/50'}`}>
+                    <div className="flex items-center gap-1 sm:gap-2 mb-1">
+                      <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500 dark:text-gray-400" />
                       <div className={`text-xs font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Address</div>
                     </div>
-                    <div className={`text-sm ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{selectedSupplier.address || 'Not provided'}</div>
+                    <div className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+                      {selectedSupplier.address || 'Not provided'}
+                    </div>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className={`p-3 rounded-lg ${isDarkMode ? 'bg-gray-700/50' : 'bg-green-50/50'}`}>
-                      <div className="flex items-center gap-2 mb-1">
-                        <Calendar className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                  <div className="grid grid-cols-2 gap-2 sm:gap-4">
+                    <div className={`p-2 sm:p-3 rounded-lg ${isDarkMode ? 'bg-gray-700/50' : 'bg-green-50/50'}`}>
+                      <div className="flex items-center gap-1 sm:gap-2 mb-1">
+                        <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500 dark:text-gray-400" />
                         <div className={`text-xs font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Joined</div>
                       </div>
-                      <div className={`text-sm ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{selectedSupplier.joinedDate}</div>
+                      <div className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{selectedSupplier.joinedDate}</div>
                     </div>
                     
-                    <div className={`p-3 rounded-lg ${isDarkMode ? 'bg-gray-700/50' : 'bg-green-50/50'}`}>
+                    <div className={`p-2 sm:p-3 rounded-lg ${isDarkMode ? 'bg-gray-700/50' : 'bg-green-50/50'}`}>
                       <div className={`text-xs font-medium mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Status</div>
-                      <span className={`inline-flex items-center gap-2 px-2 py-1 rounded-full text-xs ${
+                      <span className={`inline-flex items-center gap-1 sm:gap-2 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs ${
                         selectedSupplier.status === 'active' 
                           ? (isDarkMode ? 'bg-emerald-900/30 text-emerald-300' : 'bg-emerald-100 text-emerald-700')
                           : (isDarkMode ? 'bg-amber-900/30 text-amber-300' : 'bg-amber-100 text-amber-700')
@@ -1426,47 +1582,47 @@ const SupplierList = () => {
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className={`p-3 rounded-lg ${isDarkMode ? 'bg-gray-700/50' : 'bg-emerald-50/50'}`}>
+                  <div className="grid grid-cols-2 gap-2 sm:gap-4">
+                    <div className={`p-2 sm:p-3 rounded-lg ${isDarkMode ? 'bg-gray-700/50' : 'bg-emerald-50/50'}`}>
                       <div className={`text-xs font-medium mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Total Products</div>
-                      <div className={`text-lg font-bold ${isDarkMode ? 'text-emerald-300' : 'text-emerald-600'}`}>{selectedSupplier.totalProducts}</div>
+                      <div className={`text-sm sm:text-lg font-bold ${isDarkMode ? 'text-emerald-300' : 'text-emerald-600'}`}>{selectedSupplier.totalProducts}</div>
                     </div>
                     
-                    <div className={`p-3 rounded-lg ${isDarkMode ? 'bg-gray-700/50' : 'bg-emerald-50/50'}`}>
+                    <div className={`p-2 sm:p-3 rounded-lg ${isDarkMode ? 'bg-gray-700/50' : 'bg-emerald-50/50'}`}>
                       <div className={`text-xs font-medium mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Total Orders</div>
-                      <div className={`text-lg font-bold ${isDarkMode ? 'text-emerald-300' : 'text-emerald-600'}`}>{selectedSupplier.totalOrders}</div>
+                      <div className={`text-sm sm:text-lg font-bold ${isDarkMode ? 'text-emerald-300' : 'text-emerald-600'}`}>{selectedSupplier.totalOrders}</div>
                     </div>
                   </div>
                   
-                  <div className={`p-3 rounded-lg ${isDarkMode ? 'bg-gray-700/50' : 'bg-green-50/50'}`}>
+                  <div className={`p-2 sm:p-3 rounded-lg ${isDarkMode ? 'bg-gray-700/50' : 'bg-green-50/50'}`}>
                     <div className={`text-xs font-medium mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Reliability</div>
-                    <span className={`inline-flex items-center gap-2 px-2 py-1 rounded-full text-xs ${
+                    <span className={`inline-flex items-center gap-1 sm:gap-2 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs ${
                       selectedSupplier.reliability === 'High' 
                         ? (isDarkMode ? 'bg-emerald-900/30 text-emerald-300' : 'bg-emerald-100 text-emerald-700')
                         : selectedSupplier.reliability === 'Medium'
                         ? (isDarkMode ? 'bg-amber-900/30 text-amber-300' : 'bg-amber-100 text-amber-700')
                         : (isDarkMode ? 'bg-red-900/30 text-red-300' : 'bg-red-100 text-red-700')
                     }`}>
-                      {selectedSupplier.reliability === 'High' ? '⭐ High Reliability' :
-                       selectedSupplier.reliability === 'Medium' ? '⭐ Medium Reliability' : '⭐ Low Reliability'}
+                      {selectedSupplier.reliability === 'High' ? '⭐ High' :
+                       selectedSupplier.reliability === 'Medium' ? '⭐ Medium' : '⭐ Low'}
                     </span>
                   </div>
                   
                   {selectedSupplier.notes && (
-                    <div className={`p-3 rounded-lg ${isDarkMode ? 'bg-gray-700/50' : 'bg-green-50/50'}`}>
+                    <div className={`p-2 sm:p-3 rounded-lg ${isDarkMode ? 'bg-gray-700/50' : 'bg-green-50/50'}`}>
                       <div className={`text-xs font-medium mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Notes</div>
-                      <div className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>{selectedSupplier.notes}</div>
+                      <div className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>{selectedSupplier.notes}</div>
                     </div>
                   )}
                 </div>
                 
-                <div className="flex gap-3 mt-6 pt-6 border-t border-gray-300 dark:border-gray-700">
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-gray-300 dark:border-gray-700">
                   <button
                     onClick={() => {
                       setShowViewModal(false);
                       setSelectedSupplier(null);
                     }}
-                    className={`flex-1 px-4 py-2.5 font-medium rounded-lg transition-colors ${isDarkMode ? 'bg-gray-800 hover:bg-gray-700 text-gray-300' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}
+                    className={`flex-1 px-3 sm:px-4 py-2 sm:py-2.5 font-medium rounded-lg transition-colors text-xs sm:text-sm ${isDarkMode ? 'bg-gray-800 hover:bg-gray-700 text-gray-300' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}
                   >
                     Close
                   </button>
@@ -1475,9 +1631,9 @@ const SupplierList = () => {
                       setShowViewModal(false);
                       setShowEditModal(true);
                     }}
-                    className="flex-1 px-4 py-2.5 bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800 text-white font-medium rounded-lg transition-colors"
+                    className="flex-1 px-3 sm:px-4 py-2 sm:py-2.5 bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800 text-white font-medium rounded-lg transition-colors text-xs sm:text-sm"
                   >
-                    <Edit className="inline h-4 w-4 mr-2" />
+                    <Edit className="inline h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                     Edit
                   </button>
                 </div>
